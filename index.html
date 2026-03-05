@@ -1014,7 +1014,8 @@
             }
 
             // ★重要：localStorageでスキップした場合でも、LINEから開いていればLINE IDを上書き登録する
-            if (lineUserId && userObj && (userObj.UserID || userObj.userId)) {
+            // ただし、ログアウト直後は書き戻さない
+            if (lineUserId && userObj && (userObj.UserID || userObj.userId) && !localStorage.getItem('walpass_logged_out')) {
                 var uid = userObj.UserID || userObj.userId;
                 console.log('Background binding lineUserId to', uid);
                 gasJsonpFetch('api=bindLineIdToUser&userId=' + encodeURIComponent(uid) + '&lineId=' + encodeURIComponent(lineUserId))
@@ -1991,10 +1992,10 @@
                         });
 
                         // 戻るボタン
-                        html += '<button onclick="localStorage.removeItem(\'walpass_mode\'); location.reload();" style="width:100%; padding:15px; background:#888; color:white; border:none; border-radius:8px; font-weight:bold; margin-top:10px; margin-bottom:10px;">注文画面に戻る</button>';
+                        html += '<button onclick="urlMode=null; localStorage.removeItem(\'walpass_mode\'); renderCalendar(); renderCycleUI(); document.querySelector(\'footer\').style.display=\'block\'; document.getElementById(\'cycleSelectArea\').style.display=\'\'; this.parentNode.querySelector(\'h2\').remove(); this.nextElementSibling.remove(); this.remove();" style="width:100%; padding:15px; background:#888; color:white; border:none; border-radius:8px; font-weight:bold; margin-top:10px; margin-bottom:10px;">注文画面に戻る</button>';
 
                         // ログアウト（リセット）ボタン - テストや切り替え用
-                        html += '<button onclick="if(confirm(\'ログアウトしてユーザー登録を解除しますか？\')){localStorage.clear(); location.reload();}" style="width:100%; padding:15px; background:#e74c3c; color:white; border:none; border-radius:8px; font-weight:bold; margin-bottom:40px;">ログアウト（別の名前で登録し直す）</button>';
+                        html += '<button onclick="if(confirm(\'ログアウトしてユーザー登録を解除しますか？\')){localStorage.clear(); localStorage.setItem(\'walpass_logged_out\',\'1\'); var base=window.location.href.split(\'?\')[0]; window.location.href=base+\'?mode=register\' + (urlTeamCode ? \'&team=\'+urlTeamCode : \'\')}" style="width:100%; padding:15px; background:#e74c3c; color:white; border:none; border-radius:8px; font-weight:bold; margin-bottom:40px;">ログアウト（別の名前で登録し直す）</button>';
 
                         container.innerHTML = html;
                     } catch (err) {
