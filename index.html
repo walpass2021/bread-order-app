@@ -750,7 +750,7 @@
                 });
 
                 // LIFFの初期化 (非同期を待つがフリーズしない構造に)
-                loadingText.innerText = "Please waiting...";
+                loadingText.innerText = "Please wait...";
 
                 var liffResolved = false;
 
@@ -758,7 +758,7 @@
                 var fallbackTimeout = setTimeout(function () {
                     if (!liffResolved) {
                         liffResolved = true;
-                        loadingText.innerText = "Please waiting...";
+                        loadingText.innerText = "Please wait...";
                         proceedToFetchData();
                     }
                 }, 8000);
@@ -839,7 +839,7 @@
 
             var loadingText = document.getElementById('loadingText');
             if (loadingText) {
-                loadingText.innerText = "Please waiting...";
+                loadingText.innerText = "Please wait...";
             }
             fetchInitialData();
         }
