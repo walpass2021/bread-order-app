@@ -171,20 +171,29 @@
     </div>
 
     <script>
-        // === 【重要】最新の GAS Web App URL に差し替えています ===
+        // === 【重要】最新の GAS Web App URL ===
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyc97p778gXreR7ZIsD886o9ePOfm_S1_7bTID3N2U5oBqMv0Hn0x_v4e-Dk51m_c6B/exec";
+
+        function setStatus(text) {
+            console.log(text);
+            const el = document.getElementById('error-team-info');
+            if (el) {
+                el.innerText = text;
+                el.style.display = 'block';
+            }
+        }
 
         function getParam(name) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
         }
 
-        // 起動時処理
         function init() {
             const team = getParam('team');
             const calendarIdParam = getParam('calendarId');
 
-            // デバッグ用：直接ID指定がある場合
+            setStatus("Initializing... (Team: " + (team || "NONE") + ")");
+
             if (calendarIdParam) {
                 onSettingsLoaded({
                     calendarId: calendarIdParam,
@@ -199,36 +208,39 @@
                 return;
             }
 
-            // JSONPリクエスト
+            // JSONPリクエスト (キャッシュ回避のため末尾にタイムスタンプを付与)
+            setStatus("Fetching settings from GAS...");
             const script = document.createElement('script');
-            script.src = `${GAS_WEB_APP_URL}?api=getUserTeamSettings&teamCode=${team}&callback=onSettingsLoaded`;
+            const cacheBuster = new Date().getTime();
+            script.src = `${GAS_WEB_APP_URL}?api=getUserTeamSettings&teamCode=${team}&callback=onSettingsLoaded&_=${cacheBuster}`;
             document.body.appendChild(script);
 
-            // 10秒待っても反応がなければエラーを表示（タイムアウト処理）
+            // タイムアウト監視
             setTimeout(() => {
-                if (document.getElementById('loading-spinner').style.display !== 'none' && 
-                    document.getElementById('error-card').style.display === 'none') {
-                    showError("GAS API の応答がタイムアウトしました。電波の良い場所で再度お試しいただくか、GASのデプロイ情報を確認してください。");
+                const spinner = document.getElementById('loading-spinner');
+                if (spinner && spinner.style.display !== 'none') {
+                    setStatus("Timeout Error");
+                    showError("GAS API の応答が10秒以上ありません。電波状況かGASの設定を確認してください。");
                 }
             }, 10000);
         }
 
-        // GASからのコールバック
         function onSettingsLoaded(data) {
-            document.body.style.opacity = 1;
-
             if (!data) {
-                showError("GAS API からの応答がありません。");
+                setStatus("API Response: NULL");
+                showError("GAS API から空の応答が届きました。");
                 return;
             }
 
-            // カレンダーIDが見つからない場合の表示
             if (data.error || !data.calendarId) {
+                setStatus("API Response: ID_NOT_FOUND");
                 showError("カレンダーIDが見つかりません。スプレッドシートのN列を確認してください。", getParam('team'));
                 return;
             }
 
-            // 1. 各項目の反映
+            setStatus("Settings Loaded. Building Iframe...");
+
+            // 1. デザイン反映
             const brandColor = data.themeColor || '#e53935';
             document.documentElement.style.setProperty('--brand-color', brandColor);
 
@@ -238,21 +250,20 @@
                 logoImg.style.display = 'block';
             }
 
-            // 2. カレンダーの読み込み
+            // 2. カレンダー読み込み
             const iframe = document.getElementById('calendar-iframe');
-            // ctz=Asia/Tokyo: 固定, hl=ja: 日本語
             const src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(data.calendarId)}&ctz=Asia%2FTokyo&hl=ja&mode=MONTH&showTitle=0&showNav=1&showPrint=0&showTabs=1&showCalendars=0`;
             
             iframe.src = src;
             
             iframe.onload = () => {
+                setStatus("Complete!");
                 document.getElementById('loading-spinner').style.display = 'none';
                 iframe.style.display = 'block';
             };
         }
 
         function showError(msg, team) {
-            document.body.style.opacity = 1;
             document.getElementById('loading-spinner').style.display = 'none';
             document.getElementById('error-card').style.display = 'block';
             document.getElementById('error-message').innerText = msg;
