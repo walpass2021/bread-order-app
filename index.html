@@ -917,23 +917,45 @@
             USERS = data.users;
             RULES = data.rules;
 
-            document.getElementById('loading').style.display = 'none';
-
-            // チーム関連設定（ロゴ等）の適用を常に実行する
+            // チーム関連設定（ロゴ等）の適用を待ってから画面を表示する
             var settingsParams = 'api=getUserTeamSettings';
             if (lineUserId) settingsParams += '&lineId=' + encodeURIComponent(lineUserId);
             if (urlTeamCode) settingsParams += '&teamCode=' + encodeURIComponent(urlTeamCode);
 
             gasJsonpFetch(settingsParams)
-                .then(applyTeamSettings)
-                .catch(function (err) { console.error('Team settings fetch error', err); });
+                .then(function(settings) {
+                    applyTeamSettings(settings);
+                    
+                    // ロゴ画像がある場合、画像のDL完了を待ってから画面を出す（より綺麗に見せるため）
+                    var logoImg = document.querySelector('.header-logo img');
+                    if (settings && settings.logoUrl && logoImg && !logoImg.complete) {
+                        logoImg.onload = function() {
+                            finalizeRender(data);
+                        };
+                        logoImg.onerror = function() {
+                            finalizeRender(data);
+                        };
+                    } else {
+                        // ロゴがない、または既にキャッシュ済みの場合は即座に表示
+                        finalizeRender(data);
+                    }
+                })
+                .catch(function(err) {
+                    console.error('Team settings fetch error', err);
+                    finalizeRender(data);
+                });
+        }
 
+        function finalizeRender(data) {
+            // メインコンテンツ（ヘッダー等は applyTeamSettings で表示される）
+            
             // 登録モードの場合は自動ログインをバイパスして、強制的に登録UIを表示する
             if (urlMode === 'register') {
                 var userSelectArea = document.querySelector('.user-select-area');
                 userSelectArea.style.display = 'block';
                 document.querySelector('.container').style.display = 'block';
                 setupUserRegistrationUI(data);
+                document.getElementById('loading').style.display = 'none';
                 return;
             }
 
@@ -941,7 +963,6 @@
             if (data.isBound && USERS.length > 0) {
                 var boundUser = USERS[0];
 
-                // localStorageに保存（次回アクセス時にLINE IDなしでも判別できるようにする）
                 try {
                     localStorage.setItem('walpass_bound_user', JSON.stringify({
                         userId: boundUser.UserID,
@@ -951,6 +972,7 @@
                 } catch (e) { }
 
                 showBoundUserView(data.boundUserName, boundUser);
+                document.getElementById('loading').style.display = 'none';
                 return;
             }
 
@@ -959,11 +981,10 @@
                 try {
                     var savedUser = JSON.parse(localStorage.getItem('walpass_bound_user') || 'null');
                     if (savedUser && savedUser.userId) {
-                        // サーバーから返されたユーザーリストの中に、保存済みユーザーがいるか確認
                         for (var si = 0; si < USERS.length; si++) {
                             if (String(USERS[si].UserID) === String(savedUser.userId)) {
-                                // 見つかった → 紐付け済みとして扱う
                                 showBoundUserView(savedUser.userName, USERS[si]);
+                                document.getElementById('loading').style.display = 'none';
                                 return;
                             }
                         }
@@ -976,8 +997,10 @@
             userSelectArea.style.display = 'block';
             document.querySelector('.container').style.display = 'block';
 
-            // 登録UIを表示（ログインチェックで中断しない）
             setupUserRegistrationUI(data);
+            
+            // 全ての準備が整ったのでローディング画面を消去
+            document.getElementById('loading').style.display = 'none';
         }
 
         // 紐付け済みユーザー表示（共通処理を関数化）
