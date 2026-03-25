@@ -52,9 +52,7 @@
         header h1 {
             margin: 0;
             font-size: 1.1rem;
-            color: #333;
-            /* 黒文字指定 */
-            /* ロゴが入るので少しスッキリさせる */
+            color: inherit; /* 親要素（header）の色を引き継ぐ */
         }
 
         .container {
@@ -868,12 +866,33 @@
                 // テーマカラーの書き換え
                 if (settings.themeColor) {
                     document.documentElement.style.setProperty('--accent-color', settings.themeColor);
+                    
+                    // 背景色（テーマカラー）の明るさを判定して、文字色を自動調整
+                    var textColor = getContrastYIQ(settings.themeColor);
+                    if (header) {
+                        header.style.color = textColor;
+                    }
                 }
             }
 
             // 設定の適用完了（または設定なしのデフォルト）後に表示する
             if (header) header.style.display = 'block';
             if (topBanner) topBanner.style.display = 'block';
+        }
+
+        // 背景色に対して見やすい色（黒か白）を返す関数 (明度計算)
+        function getContrastYIQ(hexcolor){
+            if (!hexcolor || hexcolor === 'transparent') return '#333';
+            hexcolor = hexcolor.replace("#", "");
+            if (hexcolor.length === 3) {
+                hexcolor = hexcolor[0] + hexcolor[0] + hexcolor[1] + hexcolor[1] + hexcolor[2] + hexcolor[2];
+            }
+            var r = parseInt(hexcolor.substr(0,2),16);
+            var g = parseInt(hexcolor.substr(2,2),16);
+            var b = parseInt(hexcolor.substr(4,2),16);
+            // YIQ明度計算（128以上なら明るい、それ以下なら暗いと判定）
+            var yiq = ((r*299)+(g*587)+(b*114))/1000;
+            return (yiq >= 128) ? '#333' : '#fff';
         }
 
         function fetchInitialData() {
