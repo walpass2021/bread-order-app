@@ -18,8 +18,7 @@
             font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            opacity: 0;
-            transition: opacity 0.5s;
+            /* opacity: 0; を削除 */
         }
 
         header {
@@ -204,6 +203,14 @@
             const script = document.createElement('script');
             script.src = `${GAS_WEB_APP_URL}?api=getUserTeamSettings&teamCode=${team}&callback=onSettingsLoaded`;
             document.body.appendChild(script);
+
+            // 10秒待っても反応がなければエラーを表示（タイムアウト処理）
+            setTimeout(() => {
+                if (document.getElementById('loading-spinner').style.display !== 'none' && 
+                    document.getElementById('error-card').style.display === 'none') {
+                    showError("GAS API の応答がタイムアウトしました。電波の良い場所で再度お試しいただくか、GASのデプロイ情報を確認してください。");
+                }
+            }, 10000);
         }
 
         // GASからのコールバック
