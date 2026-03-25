@@ -172,17 +172,29 @@
     </div>
 
     <script>
-        // === 設定（GASのWebアプリURLを入れてください） ===
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzks61SfmZxaG4EJnX8E0p5kMop2gJ6Pyac8yLk348kzwJwfth6tuTEV0Fda9pY5pANBw/exec";
+        // === 【重要】最新の GAS Web App URL に差し替えています ===
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyc97p778gXreR7ZIsD886o9ePOfm_S1_7bTID3N2U5oBqMv0Hn0x_v4e-Dk51m_c6B/exec";
 
         function getParam(name) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
         }
 
-        // JSONPによるデータ取得の開始
+        // 起動時処理
         function init() {
             const team = getParam('team');
+            const calendarIdParam = getParam('calendarId');
+
+            // デバッグ用：直接ID指定がある場合
+            if (calendarIdParam) {
+                onSettingsLoaded({
+                    calendarId: calendarIdParam,
+                    themeColor: '#e53935',
+                    teamName: 'DebugMode'
+                });
+                return;
+            }
+
             if (!team) {
                 showError("URLに ?team=xxx が指定されていません。");
                 return;
@@ -194,16 +206,22 @@
             document.body.appendChild(script);
         }
 
-        // GASからのコールバック関数
+        // GASからのコールバック
         function onSettingsLoaded(data) {
             document.body.style.opacity = 1;
 
-            if (!data || data.error || !data.calendarId) {
-                showError("カレンダーの設定が見つかりませんでした。スプレッドシートの設定を確認してください。", getParam('team'));
+            if (!data) {
+                showError("GAS API からの応答がありません。");
                 return;
             }
 
-            // UI更新
+            // カレンダーIDが見つからない場合の表示
+            if (data.error || !data.calendarId) {
+                showError("カレンダーIDが見つかりません。スプレッドシートのN列を確認してください。", getParam('team'));
+                return;
+            }
+
+            // 1. 各項目の反映
             const brandColor = data.themeColor || '#e53935';
             document.documentElement.style.setProperty('--brand-color', brandColor);
 
@@ -213,13 +231,17 @@
                 logoImg.style.display = 'block';
             }
 
-            // Iframe更新
+            // 2. カレンダーの読み込み
             const iframe = document.getElementById('calendar-iframe');
             // ctz=Asia/Tokyo: 固定, hl=ja: 日本語
-            iframe.src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(data.calendarId)}&ctz=Asia%2FTokyo&hl=ja&mode=MONTH&showTitle=0&showNav=1&showPrint=0&showTabs=1&showCalendars=0`;
+            const src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(data.calendarId)}&ctz=Asia%2FTokyo&hl=ja&mode=MONTH&showTitle=0&showNav=1&showPrint=0&showTabs=1&showCalendars=0`;
             
-            document.getElementById('loading-spinner').style.display = 'none';
-            iframe.style.display = 'block';
+            iframe.src = src;
+            
+            iframe.onload = () => {
+                document.getElementById('loading-spinner').style.display = 'none';
+                iframe.style.display = 'block';
+            };
         }
 
         function showError(msg, team) {
@@ -229,6 +251,7 @@
             document.getElementById('error-message').innerText = msg;
             if (team) {
                 document.getElementById('error-team-info').innerText = "Team: " + team;
+                document.getElementById('error-team-info').style.display = 'block';
             }
         }
 
