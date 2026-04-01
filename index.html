@@ -599,7 +599,7 @@
         </div>
 
         <!-- メインのカレンダー描画エリア -->
-        <div id="calendarContainer" class="calendar-container">
+        <div id="calendarContainer" class="calendar-list">
             <div style="text-align:center; padding: 20px;">Please wait...</div>
         </div>
     </div>
@@ -868,9 +868,13 @@
                     document.documentElement.style.setProperty('--accent-color', settings.themeColor);
                     
                     // 背景色（テーマカラー）の明るさを判定して、文字色を自動調整
-                    var textColor = getContrastYIQ(settings.themeColor);
+                    // ただし、settings.subtitleColor が明示的に指定されている場合はそれを優先
+                    var textColor = settings.subtitleColor || getContrastYIQ(settings.themeColor);
                     if (header) {
                         header.style.color = textColor;
+                        // ロゴ下のタイトルの色も明示的にセット
+                        var titleElem = header.querySelector('h1');
+                        if (titleElem) titleElem.style.color = textColor;
                     }
                 }
             }
