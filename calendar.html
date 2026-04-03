@@ -5,116 +5,126 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>配送カレンダー</title>
+    
+    <!-- FullCalendar & dependencies -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ja.js"></script>
+
     <style>
         :root {
-            --brand-color: #e53935; /* 初期色 */
-            --bg-color: #f4f7f6;
-            --text-color: #333333;
+            --brand-color: #e53935;
+            --bg-color: #f8fafb;
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
         }
 
         body {
             margin: 0;
             padding: 0;
-            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            font-family: "Inter", "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            /* opacity: 0; を削除 */
         }
 
         header {
-            background-color: var(--brand-color);
+            background: linear-gradient(135deg, var(--brand-color), #000);
             padding: 15px;
             text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 60px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .header-logo-container {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 12px;
         }
 
-        .header-logo-container img {
-            max-height: 50px;
+        #team-logo {
+            max-height: 44px;
             width: auto;
-            display: none; /* ロード後に表示 */
-            border-radius: 4px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.9);
+            padding: 2px;
+            display: none;
         }
 
         .header-title {
             color: #fff;
             margin: 0;
-            font-size: 1.2rem;
-            font-weight: bold;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
         }
 
         .container {
-            padding: 20px 15px;
-            max-width: 800px;
+            padding: 20px 12px;
+            max-width: 900px;
             margin: 0 auto;
         }
 
-        .info-box {
-            background: #fff;
+        /* カレンダーカードのデザイン */
+        .calendar-card {
+            background: var(--card-bg);
+            border-radius: 20px;
             padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            border-left: 6px solid var(--brand-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.05);
         }
 
-        .info-box h2 {
-            margin: 0 0 10px 0;
-            font-size: 1.1rem;
-            color: var(--brand-color);
-        }
-
-        .info-box p {
-            margin: 0;
+        /* FullCalendar カスタマイズ */
+        .fc {
+            --fc-button-bg-color: var(--brand-color);
+            --fc-button-border-color: var(--brand-color);
+            --fc-button-hover-bg-color: #222;
+            --fc-button-hover-border-color: #222;
+            --fc-button-active-bg-color: #000;
+            --fc-button-active-border-color: #000;
+            --fc-event-border-color: transparent;
+            --fc-today-bg-color: rgba(var(--brand-rgb, 229, 57, 53), 0.08);
             font-size: 0.9rem;
-            line-height: 1.5;
-            color: #666;
         }
 
-        .calendar-wrapper {
-            position: relative;
-            padding-bottom: 150%;
-            height: 0;
-            overflow: hidden;
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            border: 1px solid #eee;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        .fc .fc-toolbar-title {
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: var(--text-color);
         }
 
-        @media (min-width: 768px) {
-            .calendar-wrapper {
-                padding-bottom: 75%;
-            }
+        .fc .fc-button {
+            padding: 5px 12px;
+            font-size: 0.85rem;
+            text-transform: capitalize;
+            border-radius: 8px;
         }
 
-        .calendar-wrapper iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: 0;
-            display: none;
+        .fc-event {
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-weight: 500;
+            margin-bottom: 2px !important;
+            transition: transform 0.2s;
         }
 
-        /* 全画面ローディング */
+        .fc-event:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        .fc-day-sun .fc-col-header-cell-cushion { color: #d32f2f; }
+        .fc-day-sat .fc-col-header-cell-cushion { color: #1976d2; }
+
+        /* ローディング */
         #loading-spinner {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.9);
+            background: #fff;
             z-index: 9999;
             display: flex;
             justify-content: center;
@@ -123,12 +133,12 @@
         }
 
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--brand-color);
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f0f0f0;
+            border-top: 4px solid var(--brand-color);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
         }
 
         @keyframes spin {
@@ -136,68 +146,64 @@
             100% { transform: rotate(360deg); }
         }
 
-        .error-card {
+        .info-badge {
+            display: inline-block;
             background: #fff;
-            border-radius: 12px;
-            padding: 30px 20px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 2px dashed #ffcdd2;
-            display: none;
-            width: 100%;
-            margin: 0 20px;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            border: 1px solid #eee;
         }
 
-        .error-card h3 {
-            color: #d32f2f;
-            margin-top: 0;
+        .info-badge span {
+            color: var(--brand-color);
+            font-weight: bold;
+        }
+
+        @media (max-width: 480px) {
+            .fc .fc-toolbar {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .fc-header-toolbar {
+                margin-bottom: 1em !important;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- 全画面ローディング -->
     <div id="loading-spinner">
         <div class="spinner"></div>
-        <div style="margin-top:20px; font-weight:bold; color:var(--brand-color);">Please wait...</div>
+        <div style="margin-top:15px; font-weight:600; color:#666;">配送情報を読み込み中...</div>
     </div>
 
     <header id="app-header">
         <div class="header-logo-container">
-            <img id="team-logo" src="" alt="Team Logo">
+            <img id="team-logo" src="" alt="Logo">
             <div class="header-title">配送カレンダー</div>
         </div>
     </header>
 
-    <div class="container" id="app-container">
-        <div class="info-box" id="info-box">
-            <h2>配送スケジュール</h2>
-            <p>最新の配送予定をご確認いただけます。予定は変更される場合があります。</p>
+    <div class="container">
+        <div style="text-align:center;">
+            <div class="info-badge">
+                📅 <span>配送予定一覧</span> をご確認いただけます
+            </div>
         </div>
 
-        <div class="calendar-wrapper" id="calendar-container">
-            <iframe id="calendar-iframe" src="" scrolling="no" frameborder="0"></iframe>
-            
-            <div id="error-card" class="error-card">
-                <h3>読み込みエラー</h3>
-                <p id="error-message">カレンダーの情報を取得できませんでした。</p>
-                <p style="font-size:0.8rem; color:#999; margin-top:20px;" id="error-team-info"></p>
-            </div>
+        <div class="calendar-card">
+            <div id="calendar"></div>
         </div>
     </div>
 
     <script>
-        // === 【重要】最新の GAS Web App URL ===
+        // === GAS Web App URL (そのまま維持) ===
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzks61SfmZxaG4EJnX8E0p5kMop2gJ6Pyac8yLk348kzwJwfth6tuTEV0Fda9pY5pANBw/exec";
 
-        function setStatus(text) {
-            console.log(text);
-            const el = document.getElementById('error-team-info');
-            if (el) {
-                el.innerText = text;
-                el.style.display = 'block';
-            }
-        }
+        let currentCalendarId = null;
 
         function getParam(name) {
             const urlParams = new URLSearchParams(window.location.search);
@@ -206,87 +212,81 @@
 
         function init() {
             const team = getParam('team');
-            const calendarIdParam = getParam('calendarId');
-
-            setStatus("Initializing... (Team: " + (team || "NONE") + ")");
-
-            if (calendarIdParam) {
-                onSettingsLoaded({
-                    calendarId: calendarIdParam,
-                    themeColor: '#e53935',
-                    teamName: 'DebugMode'
-                });
-                return;
-            }
-
             if (!team) {
-                showError("URLに ?team=xxx が指定されていません。");
+                alert("Team param is missing");
                 return;
             }
 
-            // JSONPリクエスト (キャッシュ回避のため末尾にタイムスタンプを付与)
-            setStatus("Fetching settings from GAS...");
+            // 1. チーム設定を取得
             const script = document.createElement('script');
-            const cacheBuster = new Date().getTime();
-            script.src = `${GAS_WEB_APP_URL}?api=getUserTeamSettings&teamCode=${team}&callback=onSettingsLoaded&_=${cacheBuster}`;
+            script.src = `${GAS_WEB_APP_URL}?api=getUserTeamSettings&teamCode=${team}&callback=onSettingsLoaded`;
             document.body.appendChild(script);
-
-            // タイムアウト監視
-            setTimeout(() => {
-                const spinner = document.getElementById('loading-spinner');
-                if (spinner && spinner.style.display !== 'none') {
-                    setStatus("Timeout Error");
-                    showError("GAS API の応答が10秒以上ありません。電波状況かGASの設定を確認してください。");
-                }
-            }, 10000);
         }
 
         function onSettingsLoaded(data) {
-            if (!data) {
-                setStatus("API Response: NULL");
-                showError("GAS API から空の応答が届きました。");
+            if (!data || !data.calendarId) {
+                alert("カレンダーIDが見つかりません。設定を確認してください。");
                 return;
             }
 
-            if (data.error || !data.calendarId) {
-                setStatus("API Response: ID_NOT_FOUND");
-                showError("カレンダーIDが見つかりません。スプレッドシートのN列を確認してください。", getParam('team'));
-                return;
-            }
-
-            setStatus("Settings Loaded. Building Iframe...");
-
-            // 1. デザイン反映
+            currentCalendarId = data.calendarId;
             const brandColor = data.themeColor || '#e53935';
             document.documentElement.style.setProperty('--brand-color', brandColor);
-
+            
             if (data.logoUrl) {
-                const logoImg = document.getElementById('team-logo');
-                logoImg.src = data.logoUrl;
-                logoImg.style.display = 'block';
+                const logo = document.getElementById('team-logo');
+                logo.src = data.logoUrl;
+                logo.style.display = 'block';
             }
 
-            // 2. カレンダー読み込み
-            const iframe = document.getElementById('calendar-iframe');
-            const src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(data.calendarId)}&ctz=Asia%2FTokyo&hl=ja&mode=MONTH&showTitle=0&showNav=1&showPrint=0&showTabs=1&showCalendars=0`;
-            
-            iframe.src = src;
-            
-            iframe.onload = () => {
-                setStatus("Complete!");
-                document.getElementById('loading-spinner').style.display = 'none';
-                iframe.style.display = 'block';
-            };
+            // 2. 予定データを取得
+            fetchEvents();
         }
 
-        function showError(msg, team) {
-            document.getElementById('loading-spinner').style.display = 'none';
-            document.getElementById('error-card').style.display = 'block';
-            document.getElementById('error-message').innerText = msg;
-            if (team) {
-                document.getElementById('error-team-info').innerText = "Team: " + team;
-                document.getElementById('error-team-info').style.display = 'block';
+        function fetchEvents() {
+            const script = document.createElement('script');
+            script.src = `${GAS_WEB_APP_URL}?api=getCalendarEvents&calendarId=${encodeURIComponent(currentCalendarId)}&callback=renderCalendar`;
+            document.body.appendChild(script);
+        }
+
+        function renderCalendar(events) {
+            if (events && events.error) {
+                alert("カレンダー読み込みエラー: " + events.error);
+                return;
             }
+
+            const calendarEl = document.getElementById('calendar');
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'ja',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: ''
+                },
+                events: events, // ここに取得したイベント（色情報付き）を投入
+                eventTimeFormat: {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    meridiem: false
+                },
+                dayMaxEvents: true, // 予定が多い場合は「+他X件」と表示
+                height: 'auto',
+                contentHeight: 'auto',
+                windowResize: function(view) {
+                    // モバイルとデスクトップで表示を調整
+                    if (window.innerWidth < 768) {
+                        calendar.setOption('headerToolbar', {
+                            left: 'prev,next',
+                            center: 'title',
+                            right: 'today'
+                        });
+                    }
+                }
+            });
+
+            calendar.render();
+            document.getElementById('loading-spinner').style.display = 'none';
         }
 
         window.onload = init;
