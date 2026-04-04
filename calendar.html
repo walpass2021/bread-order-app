@@ -34,7 +34,7 @@
 
         /* ヘッダーセクション */
         header {
-            background: var(--header-gradient);
+            background: linear-gradient(135deg, var(--brand-color), #fff);
             padding: 15px;
             text-align: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
@@ -53,11 +53,7 @@
         #team-logo {
             max-height: 48px;
             width: auto;
-            border-radius: 6px;
-            background: rgba(255,255,255,0.95);
-            padding: 2px;
             display: none; /* ロード後に表示 */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         .header-title {
@@ -336,6 +332,11 @@
                 // 取得したイベントデータを投入
                 events: events, 
                 
+                // タップ時に詳細を表示
+                eventClick: function(info) {
+                    alert("予定の詳細: " + info.event.title);
+                },
+
                 // デザイン・挙動の設定
                 dayMaxEvents: true, // 1日に予定が多い場合は「他X件」と表示
                 height: 'auto',
