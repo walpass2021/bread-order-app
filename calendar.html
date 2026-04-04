@@ -315,7 +315,9 @@
         function renderFullCalendar(events) {
             if (events && events.error) {
                 console.error("Calendar fetch error:", events.error);
-                alert("カレンダーの読み込みに失敗しました。プロジェクトのアクセス権限を確認してください。");
+                // 詳細なエラー内容を表示するように改善
+                alert("カレンダーの読み込みに失敗しました。\n\n【詳細】: " + events.error + "\n\nプロジェクトのアクセス権限またはカレンダーIDを確認してください。");
+                document.getElementById('loading-spinner').innerHTML = '<div style="padding:40px; text-align:center; color:red;"><h3>読み込みエラー</h3><p>' + events.error + '</p></div>';
                 return;
             }
 
