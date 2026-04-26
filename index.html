@@ -1061,7 +1061,7 @@
                     var restDiv = document.createElement('div');
                     restDiv.id = 'restrictedMsg';
                     restDiv.style.cssText = 'background:#fff5f5; border:1px solid #feb2b2; color:#c53030; padding:15px; border-radius:12px; margin:10px 0 20px; text-align:center; font-weight:bold;';
-                    restDiv.innerHTML = '現在、パンの注文対象外に設定されています。<br><span style="font-size:0.85rem; font-weight:normal;">詳細は管理者へお問い合わせください。</span>';
+                    restDiv.innerHTML = 'パン注文対象外に設定されています。<br><span style="font-size:0.85rem; font-weight:normal;">まずはプランの申し込みからお願いいたします。</span>';
                     var container = document.querySelector('.container');
                     // ウェルカムメッセージの下に挿入
                     var welcome = document.getElementById('welcomeMsg');
@@ -1096,8 +1096,8 @@
                 renderCalendar();
                 renderCycleUI();
             } else {
-                // 制限中の場合はエリアを完全にクリア・非表示にする
-                document.getElementById('calendarContainer').innerHTML = '<div style="text-align:center; padding:20px; color:#c53030; font-weight:bold;">現在、注文機能は制限されています。</div>';
+                // 制限中の場合はエリアを完全にクリア
+                document.getElementById('calendarContainer').innerHTML = '';
                 document.getElementById('cycleSelectArea').style.display = 'none';
             }
         }
@@ -1431,10 +1431,8 @@
 
             var deliveryType = (selectedOption.dataset.deliveryType || "").toString().trim();
             
-            if (!deliveryType || deliveryType.indexOf('不可') !== -1) {
-                container.innerHTML = '<div style="text-align:center; padding:20px; color:#c53030; font-weight:bold;">現在、注文機能は制限されています。</div>';
+                container.innerHTML = '';
                 return;
-            }
 
             var allowedDates = getAllowedDates(deliveryType); // ['2026/02/20', '2026/02/24'...]
 
