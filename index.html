@@ -671,6 +671,7 @@
                 script.src = url;
                 script.onerror = function () {
                     reject(new Error('JSONP通信に失敗しました'));
+                    reject(new Error('通信に失敗しました'));
                     delete window[callbackName];
                     if (script.parentNode) script.parentNode.removeChild(script);
                 };
@@ -680,11 +681,6 @@
 
         var PRODUCTS = [];
         var USERS = [];
-        var RULES = []; // 配送ルール
-        var cycleSelection = []; // { id: productId, name: productName } の配列
-        var lineUserId = null; // LIFFから取得するLINE ID
-        var urlTeamCode = null; // URLから取得するチーム記号
-        var urlMode = null; // 画面モード（通常 or history）
 
         // 初期化
         window.onload = function () {
@@ -1429,10 +1425,10 @@
                 return;
             }
 
-            var deliveryType = (selectedOption.dataset.deliveryType || "").toString().trim();
-            
+            if (!deliveryType || deliveryType.indexOf('不可') !== -1) {
                 container.innerHTML = '';
                 return;
+            }
 
             var allowedDates = getAllowedDates(deliveryType); // ['2026/02/20', '2026/02/24'...]
 
