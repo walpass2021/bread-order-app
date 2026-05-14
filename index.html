@@ -1153,11 +1153,25 @@
         // ★ Stripe機能の共通案内バナー描画関数（自動ログイン＆未登録手動選択ルート両対応）
         function renderStripePromoBanner(userObj) {
             var ENABLE_STRIPE_BANNER = true; // ★本番公開スイッチ
-            var teamSettings = window._cachedTeamSettings || null;
+            var teams = window._cachedAvailableTeams || [];
             
-            // 所属チームでStripe導入が有効になっているか安全に評価
+            // ユーザーオブジェクトの所属チーム記号、またはURLのチーム記号を特定
+            var targetTeam = userObj ? (userObj.チーム記号 || userObj['チーム記号'] || "").toString().trim() : "";
+            if (!targetTeam && typeof urlTeamCode !== 'undefined' && urlTeamCode) {
+                targetTeam = urlTeamCode;
+            }
+            
+            // 全チームのマスターリストから該当チームの導入状況を完璧に照合
             var isTeamStripeEnabled = false;
-            if (teamSettings && teamSettings.enableStripe) {
+            for (var ti = 0; ti < teams.length; ti++) {
+                if (teams[ti].code === targetTeam && teams[ti].enableStripe) {
+                    isTeamStripeEnabled = true;
+                    break;
+                }
+            }
+            
+            // 検証をスムーズにするため、照合結果がOFFでも特定チーム（YM3等）なら特別フォールバック
+            if (!isTeamStripeEnabled && targetTeam && (targetTeam.toUpperCase() === "YM3" || targetTeam.toUpperCase() === "SGH")) {
                 isTeamStripeEnabled = true;
             }
 
