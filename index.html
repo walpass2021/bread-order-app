@@ -1036,7 +1036,7 @@
                     }));
                 } catch (e) { }
 
-                showBoundUserView(data.boundUserName, boundUser);
+                showBoundUserView(data.boundUserName, boundUser, data.teamSettings);
                 document.getElementById('loading').style.display = 'none';
                 return;
             }
@@ -1048,7 +1048,7 @@
                     if (savedUser && savedUser.userId) {
                         for (var si = 0; si < USERS.length; si++) {
                             if (String(USERS[si].UserID) === String(savedUser.userId)) {
-                                showBoundUserView(savedUser.userName, USERS[si]);
+                                showBoundUserView(savedUser.userName, USERS[si], data.teamSettings);
                                 document.getElementById('loading').style.display = 'none';
                                 return;
                             }
@@ -1069,7 +1069,7 @@
         }
 
         // 紐付け済みユーザー表示（共通処理を関数化）
-        function showBoundUserView(userName, userObj) {
+        function showBoundUserView(userName, userObj, teamSettings) {
             document.querySelector('.container').style.display = 'block';
             
             // 注文不可ユーザーの判定 (空欄、または「不可」という文字を含む場合)
@@ -1124,9 +1124,10 @@
             // === Stripe決済基盤統合：カード未登録ユーザーへの登録案内バナー表示 ===
             var cardStatus = (userObj.カード登録状況 || userObj['カード登録状況'] || "").toString().trim();
             var isCardRegistered = (cardStatus.indexOf('✅') !== -1 || cardStatus.indexOf('登録済み') !== -1);
+            var isTeamStripeEnabled = teamSettings ? (teamSettings.enableStripe === true) : false;
             
-            // 注文対象外でない、かつカードが登録されていない場合にバナーを出す（スイッチ連動）
-            if (ENABLE_STRIPE_BANNER && !isRestricted && !isCardRegistered) {
+            // 注文対象外でない、かつカードが登録されていない場合にバナーを出す（スイッチ＆マスター設定連動）
+            if (ENABLE_STRIPE_BANNER && isTeamStripeEnabled && !isRestricted && !isCardRegistered) {
                 if (!document.getElementById('stripePromoMsg')) {
                     var promoDiv = document.createElement('div');
                     promoDiv.id = 'stripePromoMsg';
