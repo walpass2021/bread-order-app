@@ -1183,7 +1183,7 @@
             
             // 検証用フォールバック（前後の空白文字の罠を排除するため部分一致で強固にトラップ）
             var normTeam = targetTeam ? targetTeam.toUpperCase() : "";
-            if (!isTeamStripeEnabled && normTeam && (normTeam.indexOf("YM3") !== -1 || normTeam.indexOf("SGH") !== -1 || normTeam.indexOf("CPR") !== -1 || normTeam.indexOf("TEST") !== -1 || normTeam.indexOf("DEMO") !== -1)) {
+            if (!isTeamStripeEnabled && normTeam && (normTeam.indexOf("YM3") !== -1 || normTeam.indexOf("SGH") !== -1 || normTeam.indexOf("TEST") !== -1 || normTeam.indexOf("DEMO") !== -1)) {
                 isTeamStripeEnabled = true;
             }
 
