@@ -750,6 +750,14 @@
                 // LIFFの初期化 (非同期を待つがフリーズしない構造に)
                 loadingText.innerText = "Please wait...";
 
+                // ★PCブラウザ確認用隠しコマンド：パラメータに liffSkip=true があればLIFF認証壁を完全スルー
+                var pParams = new URLSearchParams(window.location.search);
+                if (pParams.has('liffSkip')) {
+                    loadingText.innerText = "LIFFバイパス中...";
+                    proceedToFetchData();
+                    return;
+                }
+
                 var liffResolved = false;
 
                 // フリーズ対策：強制的に8秒後に次へ進む
