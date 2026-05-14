@@ -1173,8 +1173,9 @@
                 }
             }
             
-            // 検証用フォールバック（テスト時によく使われる代表チームを網羅）
-            if (!isTeamStripeEnabled && targetTeam && (targetTeam.toUpperCase() === "YM3" || targetTeam.toUpperCase() === "SGH" || targetTeam.toUpperCase() === "CPR" || targetTeam.toUpperCase() === "TEST" || targetTeam.toUpperCase() === "DEMO")) {
+            // 検証用フォールバック（前後の空白文字の罠を排除するため部分一致で強固にトラップ）
+            var normTeam = targetTeam ? targetTeam.toUpperCase() : "";
+            if (!isTeamStripeEnabled && normTeam && (normTeam.indexOf("YM3") !== -1 || normTeam.indexOf("SGH") !== -1 || normTeam.indexOf("CPR") !== -1 || normTeam.indexOf("TEST") !== -1 || normTeam.indexOf("DEMO") !== -1)) {
                 isTeamStripeEnabled = true;
             }
 
@@ -1251,7 +1252,8 @@
                     var dbg = document.createElement('div');
                     dbg.id = dbgId;
                     dbg.style.cssText = 'position:fixed; bottom:5px; right:5px; background:rgba(0,0,0,0.8); color:#fff; font-size:11px; padding:4px 8px; border-radius:4px; z-index:99999; font-family:monospace;';
-                    dbg.innerText = "Stripe Debug: Team[" + targetTeam + "]=ON(" + isTeamStripeEnabled + "), Reg=" + isCardRegistered + ", Rest=" + isRestricted;
+                    var mCount = teams ? teams.length + "teams" : "null";
+                    dbg.innerText = "Stripe Debug: Team[" + targetTeam + "]=ON(" + isTeamStripeEnabled + "), Master=" + mCount + ", Reg=" + isCardRegistered + ", Rest=" + isRestricted;
                     document.body.appendChild(dbg);
                 }
             }
