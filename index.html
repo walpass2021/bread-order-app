@@ -1547,9 +1547,12 @@
             catSelect.innerHTML = '<option value="" disabled selected>カテゴリーを選択してください</option>';
             catSelect.disabled = false;
 
-            // UsersシートのCategory列からユニークな値を抽出
+            // UsersシートのCategory列からユニークな値を抽出（DeliveryTypeが有効なユーザーのみ対象）
             var categories = [];
             for (var i = 0; i < USERS.length; i++) {
+                var dt = (USERS[i].DeliveryType || "").toString().trim();
+                if (!dt || dt.indexOf('不可') !== -1) continue; // 空欄や不可は完全に除外
+
                 var cat = USERS[i].Category;
                 if (cat && categories.indexOf(cat) === -1) {
                     categories.push(cat);
@@ -1571,9 +1574,10 @@
             select.disabled = false;
             select.style.backgroundColor = '#fff';
 
-            // 選択されたカテゴリーに合致するユーザーのみ抽出
+            // 選択されたカテゴリーに合致し、かつDeliveryTypeが有効なユーザーのみ抽出
             var filteredUsers = USERS.filter(function (user) {
-                return user.Category == category;
+                var dt = (user.DeliveryType || "").toString().trim();
+                return user.Category == category && dt && dt.indexOf('不可') === -1;
             });
 
             if (filteredUsers.length === 0) {
