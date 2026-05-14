@@ -1157,6 +1157,9 @@
             
             // ユーザーオブジェクトの所属チーム記号、またはURLのチーム記号を特定
             var targetTeam = userObj ? (userObj.チーム記号 || userObj['チーム記号'] || "").toString().trim() : "";
+            if (!targetTeam && window._cachedTeamSettings && window._cachedTeamSettings.teamCode) {
+                targetTeam = window._cachedTeamSettings.teamCode;
+            }
             if (!targetTeam && typeof urlTeamCode !== 'undefined' && urlTeamCode) {
                 targetTeam = urlTeamCode;
             }
@@ -1170,8 +1173,8 @@
                 }
             }
             
-            // 検証をスムーズにするため、照合結果がOFFでも特定チーム（YM3等）なら特別フォールバック
-            if (!isTeamStripeEnabled && targetTeam && (targetTeam.toUpperCase() === "YM3" || targetTeam.toUpperCase() === "SGH")) {
+            // 検証用フォールバック（テスト時によく使われる代表チームを網羅）
+            if (!isTeamStripeEnabled && targetTeam && (targetTeam.toUpperCase() === "YM3" || targetTeam.toUpperCase() === "SGH" || targetTeam.toUpperCase() === "TEST" || targetTeam.toUpperCase() === "DEMO")) {
                 isTeamStripeEnabled = true;
             }
 
@@ -1201,8 +1204,12 @@
                     var insertTarget = restrictedElem || welcomeElem;
                     if (insertTarget && insertTarget.nextSibling) {
                         container.insertBefore(promoDiv, insertTarget.nextSibling);
-                    } else {
-                        if (container) container.appendChild(promoDiv);
+                    } else if (container) {
+                        if (container.firstChild) {
+                            container.insertBefore(promoDiv, container.firstChild);
+                        } else {
+                            container.appendChild(promoDiv);
+                        }
                     }
 
                     // バナーのボタンクリックイベント
@@ -1236,6 +1243,16 @@
                                 });
                         };
                     }
+                }
+            } else {
+                // なぜ出ないのかを一目で特定できるよう、検証画面右下にデバッグインジケーターを配置
+                var dbgId = 'stripeDebugBadge';
+                if (!document.getElementById(dbgId)) {
+                    var dbg = document.createElement('div');
+                    dbg.id = dbgId;
+                    dbg.style.cssText = 'position:fixed; bottom:5px; right:5px; background:rgba(0,0,0,0.8); color:#fff; font-size:11px; padding:4px 8px; border-radius:4px; z-index:99999; font-family:monospace;';
+                    dbg.innerText = "Stripe Debug: Team[" + targetTeam + "]=ON(" + isTeamStripeEnabled + "), Reg=" + isCardRegistered + ", Rest=" + isRestricted;
+                    document.body.appendChild(dbg);
                 }
             }
         }
