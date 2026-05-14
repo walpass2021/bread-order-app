@@ -970,6 +970,9 @@
         }
 
         function finalizeRender(data) {
+            // マスターからのチーム設定をグローバルキャッシュして未登録ルート等でも即時参照可能にする
+            window._cachedTeamSettings = data ? data.teamSettings : null;
+            
             // メインコンテンツ（ヘッダー等は applyTeamSettings で表示される）
             
             // === Stripe決済基盤統合：お支払い設定中継ぎモード ===
@@ -1115,18 +1118,56 @@
                 }
             }
 
-            // =========================================================
-            // ★ Stripe機能の公開スイッチ（true: 公開 ／ false: 非公開）
-            // 審査待ち期間中は false にしておくことで本番環境から完全に隠蔽されます
-            // =========================================================
-            var ENABLE_STRIPE_BANNER = true; // ★現在テスト用にオンに設定中
+            // ★ 共通のStripe案内バナー描画関数へ処理を委譲（未登録ルートと完全統合）
+            renderStripePromoBanner(userObj);
 
-            // === Stripe決済基盤統合：カード未登録ユーザーへの登録案内バナー表示 ===
-            var cardStatus = (userObj.カード登録状況 || userObj['カード登録状況'] || "").toString().trim();
-            var isCardRegistered = (cardStatus.indexOf('✅') !== -1 || cardStatus.indexOf('登録済み') !== -1);
-            var isTeamStripeEnabled = teamSettings ? (teamSettings.enableStripe === true) : false;
+            // userSelectにユーザー情報をセット（カレンダー描画に必要）
+            var userSelect = document.getElementById('userSelect');
+            if (userSelect && userObj) {
+                userSelect.innerHTML = '';
+                var opt = document.createElement('option');
+                opt.value = userObj.UserID || userObj.userId;
+                opt.textContent = userName;
+                opt.dataset.deliveryType = userObj.DeliveryType || userObj.deliveryType || '';
+                opt.dataset.category = userObj.Category || userObj.category || '';
+                opt.selected = true;
+                userSelect.appendChild(opt);
+            }
+
+            // ※ LINE IDの自動紐付けは登録フロー（setupUserRegistrationUI）側でのみ行う
+            // ここで自動紐付けすると、管理者がUsersシートからLINE_IDを削除しても書き戻されてしまうため無効化
+
+            // 履歴モードが指定されている場合は、カレンダーを描画せずに直接履歴画面を表示
+            if (urlMode === 'history') {
+                renderHistoryView();
+            } else if (!isRestricted) {
+                renderCalendar();
+                renderCycleUI();
+            } else {
+                // 制限中の場合はエリアを完全にクリア
+                document.getElementById('calendarContainer').innerHTML = '';
+                document.getElementById('cycleSelectArea').style.display = 'none';
+            }
+        }
+
+        // ★ Stripe機能の共通案内バナー描画関数（自動ログイン＆未登録手動選択ルート両対応）
+        function renderStripePromoBanner(userObj) {
+            var ENABLE_STRIPE_BANNER = true; // ★本番公開スイッチ
+            var teamSettings = window._cachedTeamSettings || null;
             
-            // 注文対象外でない、かつカードが登録されていない場合にバナーを出す（スイッチ＆マスター設定連動）
+            // 所属チームでStripe導入が有効になっているか安全に評価
+            var isTeamStripeEnabled = false;
+            if (teamSettings && teamSettings.enableStripe) {
+                isTeamStripeEnabled = true;
+            }
+
+            var cardStatus = userObj ? (userObj.カード登録状況 || userObj['カード登録状況'] || "").toString().trim() : "";
+            var isCardRegistered = (cardStatus.indexOf('✅') !== -1 || cardStatus.indexOf('登録済み') !== -1);
+            
+            var dT = userObj ? (userObj.DeliveryType || userObj.deliveryType || "").toString().trim() : "";
+            var isRestricted = (!dT || dT.indexOf('不可') !== -1);
+
+            // チームのカード導入が有効、注文対象外でない、かつ未登録の場合に美しい案内バナーを挿入
             if (ENABLE_STRIPE_BANNER && isTeamStripeEnabled && !isRestricted && !isCardRegistered) {
                 if (!document.getElementById('stripePromoMsg')) {
                     var promoDiv = document.createElement('div');
@@ -1147,7 +1188,7 @@
                     if (insertTarget && insertTarget.nextSibling) {
                         container.insertBefore(promoDiv, insertTarget.nextSibling);
                     } else {
-                        container.appendChild(promoDiv);
+                        if (container) container.appendChild(promoDiv);
                     }
 
                     // バナーのボタンクリックイベント
@@ -1182,34 +1223,6 @@
                         };
                     }
                 }
-            }
-
-            // userSelectにユーザー情報をセット（カレンダー描画に必要）
-            var userSelect = document.getElementById('userSelect');
-            if (userSelect && userObj) {
-                userSelect.innerHTML = '';
-                var opt = document.createElement('option');
-                opt.value = userObj.UserID || userObj.userId;
-                opt.textContent = userName;
-                opt.dataset.deliveryType = userObj.DeliveryType || userObj.deliveryType || '';
-                opt.dataset.category = userObj.Category || userObj.category || '';
-                opt.selected = true;
-                userSelect.appendChild(opt);
-            }
-
-            // ※ LINE IDの自動紐付けは登録フロー（setupUserRegistrationUI）側でのみ行う
-            // ここで自動紐付けすると、管理者がUsersシートからLINE_IDを削除しても書き戻されてしまうため無効化
-
-            // 履歴モードが指定されている場合は、カレンダーを描画せずに直接履歴画面を表示
-            if (urlMode === 'history') {
-                renderHistoryView();
-            } else if (!isRestricted) {
-                renderCalendar();
-                renderCycleUI();
-            } else {
-                // 制限中の場合はエリアを完全にクリア
-                document.getElementById('calendarContainer').innerHTML = '';
-                document.getElementById('cycleSelectArea').style.display = 'none';
             }
         }
 
@@ -1445,7 +1458,19 @@
                 container.insertBefore(welcomeDiv, container.firstChild);
             }
 
-            var delType = (localStorage.getItem('walpass_bound_user') ? JSON.parse(localStorage.getItem('walpass_bound_user')).deliveryType : "").toString().trim();
+            var savedBUser = localStorage.getItem('walpass_bound_user') ? JSON.parse(localStorage.getItem('walpass_bound_user')) : null;
+            var targetUObj = null;
+            if (savedBUser && savedBUser.userId && typeof USERS !== 'undefined') {
+                for (var ui = 0; ui < USERS.length; ui++) {
+                    if (String(USERS[ui].UserID) === String(savedBUser.userId)) {
+                        targetUObj = USERS[ui];
+                        break;
+                    }
+                }
+            }
+            renderStripePromoBanner(targetUObj);
+
+            var delType = savedBUser ? (savedBUser.deliveryType || "").toString().trim() : "";
             var isRestricted = (!delType || delType.indexOf('不可') !== -1);
 
             if (isRestricted) {
