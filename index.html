@@ -1213,8 +1213,8 @@
                     
                     promoDiv.style.cssText = 'background:' + bg + '; border:' + border + '; color:' + color + '; padding:12px 15px; border-radius:12px; margin:10px 0 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);';
                     
-                    var headerHtml = '<div id="stripePromoHeader" style="display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; font-weight:bold; font-size:0.95rem; user-select:none;">' +
-                        '<span>' + (isTest ? '⚠️ テストモード接続中（詳細・登録はこちら ▼）' : '💳 クレジットカード未登録です（詳細・登録はこちら ▼）') + '</span>' +
+                    var headerHtml = '<div id="stripePromoHeader" style="display:flex; align-items:center; justify-content:center; text-align:center; gap:8px; cursor:pointer; font-weight:bold; font-size:0.95rem; user-select:none;">' +
+                        '<span>' + (isTest ? '⚠️ テストモード接続中<br>（詳細・登録はこちら ▼）' : '💳 クレジットカード未登録です<br>（詳細・登録はこちら ▼）') + '</span>' +
                         '</div>';
                     
                     var bodyHtml = '<div id="stripePromoBody" style="display:none; margin-top:12px; border-top:1px solid rgba(0,0,0,0.08); padding-top:12px; text-align:left;">' +
@@ -1248,14 +1248,14 @@
                         promoHeader.onclick = function() {
                             if (promoBody.style.display === 'none') {
                                 promoBody.style.display = 'block';
-                                promoHeader.querySelector('span').innerText = isTest 
-                                    ? '⚠️ テストモード接続中（詳細・登録はこちら ▲）' 
-                                    : '💳 クレジットカード未登録です（詳細・登録はこちら ▲）';
+                                promoHeader.querySelector('span').innerHTML = isTest 
+                                    ? '⚠️ テストモード接続中<br>（詳細・登録はこちら ▲）' 
+                                    : '💳 クレジットカード未登録です<br>（詳細・登録はこちら ▲）';
                             } else {
                                 promoBody.style.display = 'none';
-                                promoHeader.querySelector('span').innerText = isTest 
-                                    ? '⚠️ テストモード接続中（詳細・登録はこちら ▼）' 
-                                    : '💳 クレジットカード未登録です（詳細・登録はこちら ▼）';
+                                promoHeader.querySelector('span').innerHTML = isTest 
+                                    ? '⚠️ テストモード接続中<br>（詳細・登録はこちら ▼）' 
+                                    : '💳 クレジットカード未登録です<br>（詳細・登録はこちら ▼）';
                             }
                         };
                     }
