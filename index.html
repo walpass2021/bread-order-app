@@ -1209,7 +1209,7 @@
                     var title = isTest ? '⚠️ テストモード接続中' : 'クレジットカード未登録です';
                     var description = isTest 
                         ? '現在テスト環境で動作しています。Stripeのテスト用カード番号を使用して、安全に登録フローを検証できます。（本番の請求は発生しません）' 
-                        : '毎月の注文代金を自動でスムーズにお支払いいただくため、カード情報のご登録をお願いいたします。';
+                        : 'いつもご利用いただきありがとうございます。<br>利便性向上と、スムーズな運営のため、クレジットカードによる自動引き落としシステムを導入いたしました。毎月のお振込の手間がなくなりますので、ぜひご利用ください。<br><br>※カード登録を希望されない場合は、これまで通り銀行振込での対応も継続いたしますのでご安心ください。 そのままご注文におすすみください。';
                     
                     promoDiv.style.cssText = 'background:' + bg + '; border:' + border + '; color:' + color + '; padding:15px; border-radius:12px; margin:10px 0 20px; text-align:center; font-weight:bold; box-shadow: 0 4px 12px rgba(0,0,0,0.05);';
                     promoDiv.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px;">' +
