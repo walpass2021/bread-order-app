@@ -1254,15 +1254,18 @@
                     }
                 }
             } else {
-                // なぜ出ないのかを一目で特定できるよう、検証画面右下にデバッグインジケーターを配置
-                var dbgId = 'stripeDebugBadge';
-                if (!document.getElementById(dbgId)) {
-                    var dbg = document.createElement('div');
-                    dbg.id = dbgId;
-                    dbg.style.cssText = 'position:fixed; bottom:5px; right:5px; background:rgba(0,0,0,0.8); color:#fff; font-size:11px; padding:4px 8px; border-radius:4px; z-index:99999; font-family:monospace;';
-                    var mCount = teams ? teams.length + "teams" : "null";
-                    dbg.innerText = "Stripe Debug: Team[" + targetTeam + "]=ON(" + isTeamStripeEnabled + "), Master=" + mCount + ", Reg=" + isCardRegistered + ", Rest=" + isRestricted;
-                    document.body.appendChild(dbg);
+                // URLに "debug=true" が含まれる場合のみ、検証用デバッグインジケーターを配置
+                var isDebugMode = window.location.search.indexOf('debug=true') !== -1;
+                if (isDebugMode) {
+                    var dbgId = 'stripeDebugBadge';
+                    if (!document.getElementById(dbgId)) {
+                        var dbg = document.createElement('div');
+                        dbg.id = dbgId;
+                        dbg.style.cssText = 'position:fixed; bottom:5px; right:5px; background:rgba(0,0,0,0.8); color:#fff; font-size:11px; padding:4px 8px; border-radius:4px; z-index:99999; font-family:monospace;';
+                        var mCount = teams ? teams.length + "teams" : "null";
+                        dbg.innerText = "Stripe Debug: Team[" + targetTeam + "]=ON(" + isTeamStripeEnabled + "), Master=" + mCount + ", Reg=" + isCardRegistered + ", Rest=" + isRestricted;
+                        document.body.appendChild(dbg);
+                    }
                 }
             }
         }
