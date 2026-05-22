@@ -947,6 +947,7 @@
             PRODUCTS = data.products;
             USERS = data.users;
             RULES = data.rules;
+            window._isStripeTestMode = data.isStripeTestMode || false; // ★テストモードフラグをグローバルに保存
 
             // チーム関連設定（ロゴ等）の適用を待ってから画面を表示する
             var settingsParams = 'api=getUserTeamSettings';
@@ -1198,12 +1199,22 @@
                 if (!document.getElementById('stripePromoMsg')) {
                     var promoDiv = document.createElement('div');
                     promoDiv.id = 'stripePromoMsg';
-                    promoDiv.style.cssText = 'background:linear-gradient(135deg, #fff9e6 0%, #fff2cc 100%); border:1px solid #ffe082; color:#b78103; padding:15px; border-radius:12px; margin:10px 0 20px; text-align:center; font-weight:bold; box-shadow: 0 4px 12px rgba(0,0,0,0.05);';
+                    
+                    var isTest = window._isStripeTestMode || false;
+                    var bg = isTest ? 'linear-gradient(135deg, #fff5f5 0%, #ffebeb 100%)' : 'linear-gradient(135deg, #fff9e6 0%, #fff2cc 100%)';
+                    var border = isTest ? '1px solid #feb2b2' : '1px solid #ffe082';
+                    var color = isTest ? '#c53030' : '#b78103';
+                    var title = isTest ? '⚠️ テストモード接続中' : '💳 クレジットカード未登録です';
+                    var description = isTest 
+                        ? '現在テスト環境で動作しています。Stripeのテスト用カード番号を使用して、安全に登録フローを検証できます。（本番の請求は発生しません）' 
+                        : '毎月の注文代金を自動でスムーズにお支払いいただくため、カード情報のご登録をお願いいたします。';
+                    
+                    promoDiv.style.cssText = 'background:' + bg + '; border:' + border + '; color:' + color + '; padding:15px; border-radius:12px; margin:10px 0 20px; text-align:center; font-weight:bold; box-shadow: 0 4px 12px rgba(0,0,0,0.05);';
                     promoDiv.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px;">' +
                         '<span style="font-size:1.2rem;">💳</span>' +
-                        '<span>クレジットカード未登録です</span>' +
+                        '<span>' + title + '</span>' +
                         '</div>' +
-                        '<p style="font-size:0.85rem; font-weight:normal; margin-bottom:12px; color:#666;">毎月の注文代金を自動でスムーズにお支払いいただくため、カード情報のご登録をお願いいたします。</p>' +
+                        '<p style="font-size:0.85rem; font-weight:normal; margin-bottom:12px; color:#666;">' + description + '</p>' +
                         '<button id="stripeSetupBtn" style="background:#007AFF; color:white; border:none; padding:8px 20px; border-radius:20px; font-weight:bold; font-size:0.9rem; box-shadow:0 2px 8px rgba(0,122,255,0.3); cursor:pointer;">カードを登録する</button>';
                     
                     var container = document.querySelector('.container');
