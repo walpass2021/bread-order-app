@@ -1211,13 +1211,20 @@
                         ? '現在テスト環境で動作しています。Stripeのテスト用カード番号を使用して、安全に登録フローを検証できます。（本番の請求は発生しません）' 
                         : 'いつもご利用いただきありがとうございます。<br>利便性向上と、スムーズな運営のため、クレジットカードによる自動引き落としシステムを導入いたしました。毎月のお振込の手間がなくなりますので、ぜひご利用ください。<br><br>※カード登録を希望されない場合は、これまで通り銀行振込での対応も継続いたしますのでご安心ください。 そのままご注文におすすみください。';
                     
-                    promoDiv.style.cssText = 'background:' + bg + '; border:' + border + '; color:' + color + '; padding:15px; border-radius:12px; margin:10px 0 20px; text-align:center; font-weight:bold; box-shadow: 0 4px 12px rgba(0,0,0,0.05);';
-                    promoDiv.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px;">' +
-                        '<span style="font-size:1.2rem;">💳</span>' +
-                        '<span>' + title + '</span>' +
+                    promoDiv.style.cssText = 'background:' + bg + '; border:' + border + '; color:' + color + '; padding:12px 15px; border-radius:12px; margin:10px 0 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);';
+                    
+                    var headerHtml = '<div id="stripePromoHeader" style="display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; font-weight:bold; font-size:0.95rem; user-select:none;">' +
+                        '<span>' + (isTest ? '⚠️ テストモード接続中（詳細・登録はこちら ▼）' : '💳 クレジットカード未登録です（詳細・登録はこちら ▼）') + '</span>' +
+                        '</div>';
+                    
+                    var bodyHtml = '<div id="stripePromoBody" style="display:none; margin-top:12px; border-top:1px solid rgba(0,0,0,0.08); padding-top:12px; text-align:left;">' +
+                        '<p style="font-size:0.85rem; font-weight:normal; margin-bottom:12px; color:#666; line-height:1.45;">' + description + '</p>' +
+                        '<div style="text-align:center; margin-top:10px;">' +
+                        '<button id="stripeSetupBtn" style="background:#007AFF; color:white; border:none; padding:8px 20px; border-radius:20px; font-weight:bold; font-size:0.9rem; box-shadow:0 2px 8px rgba(0,122,255,0.3); cursor:pointer;">カードを登録する</button>' +
                         '</div>' +
-                        '<p style="font-size:0.85rem; font-weight:normal; margin-bottom:12px; color:#666;">' + description + '</p>' +
-                        '<button id="stripeSetupBtn" style="background:#007AFF; color:white; border:none; padding:8px 20px; border-radius:20px; font-weight:bold; font-size:0.9rem; box-shadow:0 2px 8px rgba(0,122,255,0.3); cursor:pointer;">カードを登録する</button>';
+                        '</div>';
+                    
+                    promoDiv.innerHTML = headerHtml + bodyHtml;
                     
                     var container = document.querySelector('.container');
                     var restrictedElem = document.getElementById('restrictedMsg');
@@ -1234,8 +1241,27 @@
                         }
                     }
 
+                    // アコーディオン開閉のイベントリスナー
+                    var promoHeader = promoDiv.querySelector('#stripePromoHeader');
+                    var promoBody = promoDiv.querySelector('#stripePromoBody');
+                    if (promoHeader && promoBody) {
+                        promoHeader.onclick = function() {
+                            if (promoBody.style.display === 'none') {
+                                promoBody.style.display = 'block';
+                                promoHeader.querySelector('span').innerText = isTest 
+                                    ? '⚠️ テストモード接続中（詳細・登録はこちら ▲）' 
+                                    : '💳 クレジットカード未登録です（詳細・登録はこちら ▲）';
+                            } else {
+                                promoBody.style.display = 'none';
+                                promoHeader.querySelector('span').innerText = isTest 
+                                    ? '⚠️ テストモード接続中（詳細・登録はこちら ▼）' 
+                                    : '💳 クレジットカード未登録です（詳細・登録はこちら ▼）';
+                            }
+                        };
+                    }
+
                     // バナーのボタンクリックイベント
-                    var setupBtn = document.getElementById('stripeSetupBtn');
+                    var setupBtn = promoDiv.querySelector('#stripeSetupBtn');
                     if (setupBtn) {
                         setupBtn.onclick = function() {
                             setupBtn.disabled = true;
