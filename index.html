@@ -948,6 +948,7 @@
             USERS = data.users;
             RULES = data.rules;
             window._isStripeTestMode = data.isStripeTestMode || false; // ★テストモードフラグをグローバルに保存
+            window._cachedAvailableTeams = data.availableTeams || []; // ★チームごとのStripe導入設定を保存
 
             // チーム関連設定（ロゴ等）の適用を待ってから画面を表示する
             var settingsParams = 'api=getUserTeamSettings';
