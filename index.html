@@ -606,6 +606,9 @@
 
     <footer style="display: none;">
         <button type="button" class="submit-btn" onclick="submitOrder()">注文を確定する</button>
+        <div id="termsContainer" style="margin-top: 8px; font-size: 0.8rem; color: #666; display: none;">
+            ※注文を確定すると<a id="termsLink" href="#" target="_blank" style="color: var(--primary-color); text-decoration: underline;">利用規約</a>に同意したものとみなされます。
+        </div>
     </footer>
 
     <div id="loading" class="loading-overlay" style="display: flex;">
@@ -1094,6 +1097,7 @@
                 document.querySelector('footer').style.display = 'none';
             } else {
                 document.querySelector('footer').style.display = 'block';
+                updateTermsVisibility();
             }
             
             document.querySelector('.user-select-area').style.display = 'none';
@@ -1158,6 +1162,23 @@
                 // 制限中の場合はエリアを完全にクリア
                 document.getElementById('calendarContainer').innerHTML = '';
                 document.getElementById('cycleSelectArea').style.display = 'none';
+            }
+        }
+
+        // ★ チームごとの利用規約（注意書きリンク）表示制御関数
+        function updateTermsVisibility() {
+            var termsContainer = document.getElementById('termsContainer');
+            var termsLink = document.getElementById('termsLink');
+            if (!termsContainer || !termsLink) return;
+
+            var settings = window._cachedTeamSettings;
+            if (settings && settings.termsUrl) {
+                termsLink.href = settings.termsUrl;
+                termsContainer.style.display = 'block';
+                document.body.style.paddingBottom = '105px'; // フッターの高さ確保用
+            } else {
+                termsContainer.style.display = 'none';
+                document.body.style.paddingBottom = '80px'; // デフォルトの余白
             }
         }
 
@@ -1563,6 +1584,8 @@
             } else {
                 document.getElementById('calendarContainer').style.display = 'block';
                 document.getElementById('cycleSelectArea').style.display = 'block';
+                document.querySelector('footer').style.display = 'block';
+                updateTermsVisibility();
                 renderCalendar();
                 renderCycleUI();
             }
