@@ -2123,6 +2123,24 @@
                     return;
                 }
 
+                // 最低注文個数制限チェック
+                var minOrderCount = 0;
+                if (window._cachedTeamSettings && window._cachedTeamSettings.minOrderCount) {
+                    minOrderCount = parseInt(window._cachedTeamSettings.minOrderCount) || 0;
+                }
+
+                if (minOrderCount > 0) {
+                    var totalQty = 0;
+                    orders.forEach(function (order) {
+                        totalQty += order.quantity;
+                    });
+
+                    if (totalQty < minOrderCount) {
+                        showModalAsync('今月の注文個数は合計 ' + totalQty + ' 個です。\nこのチームの最低注文個数は ' + minOrderCount + ' 個です。\nあと ' + (minOrderCount - totalQty) + ' 個以上注文してください。', 'alert');
+                        return;
+                    }
+                }
+
                 // 日毎の個数チェック (1日に2個以上あれば警告)
                 var confirmMsg = orders.length + '件の注文を確定しますか？';
                 if (multipleOrderDates.length > 0) {
