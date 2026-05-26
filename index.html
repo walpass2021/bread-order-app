@@ -1158,6 +1158,10 @@
             } else if (!isRestricted) {
                 renderCalendar();
                 renderCycleUI();
+                // サイクル非表示設定があれば、念のため非表示を保証
+                if (teamSettings && teamSettings.hideCycle) {
+                    document.getElementById('cycleSelectArea').style.display = 'none';
+                }
             } else {
                 // 制限中の場合はエリアを完全にクリア
                 document.getElementById('calendarContainer').innerHTML = '';
@@ -1858,6 +1862,13 @@
         function renderCycleUI() {
             var cycleArea = document.getElementById('cycleSelectArea');
             var container = document.getElementById('cycleItemsContainer');
+
+            // チーム設定でサイクル非表示が指定されている場合は、非表示にして早期リターン
+            var settings = window._cachedTeamSettings;
+            if (settings && settings.hideCycle) {
+                cycleArea.style.display = 'none';
+                return;
+            }
 
             // リセット
             cycleSelection = [];
