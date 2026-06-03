@@ -555,7 +555,7 @@
         <div class="header-logo" style="display: none;">
             <img src="" alt="チームエンブレム">
         </div>
-        <h1>アスリート向け補食パン注文 (単価テスト版)</h1>
+        <h1>アスリート向け補食パン注文</h1>
     </header>
 
     <!-- ========== TOP BANNER ========== -->
@@ -2154,6 +2154,7 @@
 
                 // 平均数量に基づく単価確認メッセージの生成
                 var applicablePrice = null;
+                var avgDetailsText = '';
                 if (window._cachedTeamSettings && 
                     window._cachedTeamSettings.avgPriceLimitQty > 0 && 
                     window._cachedTeamSettings.avgPricePromoPrice > 0) {
@@ -2173,12 +2174,15 @@
                     
                     var avgQty = totalQty / totalDeliveryDays;
                     applicablePrice = (avgQty >= limitQty) ? promoPrice : normalPrice;
+                    
+                    var roundedAvg = Math.round(avgQty * 100) / 100;
+                    avgDetailsText = '（合計' + totalQty + '個 ÷ 配送' + totalDeliveryDays + '日 ＝ 1日平均' + roundedAvg + '個）';
                 }
 
                 // 日毎の個数チェック (1日に2個以上あれば警告)
                 var confirmMsg = '';
                 if (applicablePrice !== null) {
-                    confirmMsg = '適用単価は ' + applicablePrice + '円となります。この内容で注文を確定しますか？';
+                    confirmMsg = '適用単価は ' + applicablePrice + '円となります。' + avgDetailsText + '\nこの内容で注文を確定しますか？';
                 } else {
                     confirmMsg = orders.length + '件の注文を確定しますか？';
                 }
@@ -2186,11 +2190,18 @@
                 if (multipleOrderDates.length > 0) {
                     var priceText = '';
                     if (applicablePrice !== null) {
-                        priceText = '\n\n適用単価は ' + applicablePrice + '円となります。この内容で注文を確定しますか？';
+                        priceText = '\n\n適用単価は ' + applicablePrice + '円となります。' + avgDetailsText + '\nこの内容で注文を確定しますか？';
                     } else {
                         priceText = '\n\nよろしいですか？';
                     }
-                    confirmMsg = '【確認】以下の日付で2個以上の注文があります：\n' +
+                    
+                    // 「平均2個以上」という条件と混ざって混乱するのを防ぐため、
+                    // 平均単価のチームでは、誤操作チェックの表現を「複数個（2個以上）」にマイルド化します
+                    var warningTitle = (applicablePrice !== null) ? 
+                        '【確認】以下の日付で複数個（2個以上）の注文があります。押し間違いがないかご確認ください：\n' :
+                        '【確認】以下の日付で2個以上の注文があります：\n';
+
+                    confirmMsg = warningTitle +
                         multipleOrderDates.join('\n') +
                         priceText;
                 }
