@@ -1979,9 +1979,13 @@
                 return;
             }
 
-            var msg = '選択したサイクルを一括入力します。<br><br>' +
-                      '・<strong>クリアして適用</strong>：現在入力されている注文数をすべてリセットし、このサイクルを適用します。<br>' +
-                      '・<strong>重ねて追加</strong>：現在入力されている注文数は残したまま、このサイクルを追加（各日+1個）します。';
+            var msg = '<div style="text-align:left; font-size:14px; line-height:1.6; padding:0 5px;">' +
+                      '<strong style="font-size:15px; display:block; text-align:center; margin-bottom:12px;">サイクルの適用方法を選択</strong>' +
+                      '<strong>● リセットして適用</strong><br>' +
+                      '<span style="color:#666; font-size:12px; display:block; margin-bottom:10px; margin-left:12px;">現在入力されている注文数をすべて消して、新しくこのサイクルを適用します。</span>' +
+                      '<strong>● 今の注文にプラス</strong><br>' +
+                      '<span style="color:#666; font-size:12px; display:block; margin-left:12px;">現在の入力は残したまま、このサイクルを追加（各日＋1個）します。</span>' +
+                      '</div>';
 
             showModalAsync(msg, 'cycle_confirm').then(function (choice) {
                 if (choice === 'cancel') {
@@ -2110,7 +2114,7 @@
                     // サイクル適用時の3択（クリアして適用・重ねて追加・キャンセル）
                     var clearBtn = document.createElement('button');
                     clearBtn.className = 'custom-modal-btn';
-                    clearBtn.textContent = 'クリアして適用';
+                    clearBtn.textContent = 'リセットして適用';
                     clearBtn.style.color = '#e63946'; // 警告色
                     clearBtn.onclick = function () {
                         overlay.style.display = 'none';
@@ -2119,7 +2123,7 @@
 
                     var addBtn = document.createElement('button');
                     addBtn.className = 'custom-modal-btn';
-                    addBtn.textContent = '重ねて追加';
+                    addBtn.textContent = '今の注文にプラス';
                     addBtn.style.color = '#1DB446'; // 安全色
                     addBtn.onclick = function () {
                         overlay.style.display = 'none';
