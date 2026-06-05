@@ -2292,7 +2292,16 @@
                                         '</div>';
                                 }
 
-                                if (liff.isInClient()) {
+                                var isInLiff = false;
+                                try {
+                                    if (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient()) {
+                                        isInLiff = true;
+                                    }
+                                } catch (liffErr) {
+                                    console.error("LIFF check error:", liffErr);
+                                }
+
+                                if (isInLiff) {
                                     showModalAsync('注文が完了しました！<br>' + summaryHtml, 'success', shareText).then(function () {
                                         showCompletionScreen();
                                         try { liff.closeWindow(); } catch (e) { }
