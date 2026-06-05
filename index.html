@@ -592,7 +592,8 @@
         <div id="cycleSelectArea" class="cycle-select-area">
             <label style="color:#1DB446;">STEP 3. サイクルを自動作成（任意）</label>
             <div class="cycle-desc">
-                順番に食べたいパンをタップしてください。選択した順番で全ての日程に自動で1個ずつ割り当てます。
+                順番に食べたいパンをタップしてください。選択した順番で全ての日程に自動で1個ずつ割り当てます。<br>
+                ※「重ねて追加」を選ぶことで、別のサイクルを複数回重ねて適用することも可能です。
             </div>
             <div id="cycleItemsContainer" class="cycle-items">
                 <!-- JSで商品タグを生成 -->
@@ -1978,30 +1979,49 @@
                 return;
             }
 
-            // 全ての日付カードを取得
-            var dayCards = document.querySelectorAll('.day-card');
+            var msg = '選択したサイクルを一括入力します。<br><br>' +
+                      '・<strong>クリアして適用</strong>：現在入力されている注文数をすべてリセットし、このサイクルを適用します。<br>' +
+                      '・<strong>重ねて追加</strong>：現在入力されている注文数は残したまま、このサイクルを追加（各日+1個）します。';
 
-            dayCards.forEach(function (card) {
-                var dayIndex = parseInt(card.dataset.dayIndex);
+            showModalAsync(msg, 'cycle_confirm').then(function (choice) {
+                if (choice === 'cancel') {
+                    return;
+                }
 
-                // サイクルの配列から、この日に対応する商品を決定
-                var cycleItem = cycleSelection[dayIndex % cycleSelection.length];
-                var targetProductId = cycleItem.id;
+                // 全ての日付カードを取得
+                var dayCards = document.querySelectorAll('.day-card');
 
-                // カード内の全てのinputを一度0にする
-                var inputs = card.querySelectorAll('.stepper input');
-                inputs.forEach(function (input) {
-                    input.value = "0";
+                dayCards.forEach(function (card) {
+                    var dayIndex = parseInt(card.dataset.dayIndex);
+
+                    // サイクルの配列から、この日に対応する商品を決定
+                    var cycleItem = cycleSelection[dayIndex % cycleSelection.length];
+                    var targetProductId = cycleItem.id;
+
+                    var targetInput = card.querySelector('input[data-product-id="' + targetProductId + '"]');
+
+                    if (choice === 'clear') {
+                        // カード内の全てのinputを一度0にする
+                        var inputs = card.querySelectorAll('.stepper input');
+                        inputs.forEach(function (input) {
+                            input.value = "0";
+                        });
+
+                        // ターゲット商品のinputを1にする
+                        if (targetInput) {
+                            targetInput.value = "1";
+                        }
+                    } else if (choice === 'add') {
+                        // ターゲット商品の現在の数を+1する
+                        if (targetInput) {
+                            var currentVal = parseInt(targetInput.value) || 0;
+                            targetInput.value = (currentVal + 1).toString();
+                        }
+                    }
                 });
 
-                // ターゲット商品のinputを1にする
-                var targetInput = card.querySelector('input[data-product-id="' + targetProductId + '"]');
-                if (targetInput) {
-                    targetInput.value = "1";
-                }
+                showModalAsync('サイクルを適用しました！\n数や種類の微調整があれば手動で行ってください。', 'alert');
             });
-
-            showModalAsync('サイクルを適用しました！\n数や種類の微調整があれば手動で行ってください。', 'alert');
         }
 
         // --- カスタムモーダル関数 (非同期で結果を返す) ---
@@ -2085,6 +2105,37 @@
 
                     footerElem.appendChild(overwriteBtn);
                     footerElem.appendChild(appendBtn);
+                    footerElem.appendChild(cancelBtn);
+                } else if (type === 'cycle_confirm') {
+                    // サイクル適用時の3択（クリアして適用・重ねて追加・キャンセル）
+                    var clearBtn = document.createElement('button');
+                    clearBtn.className = 'custom-modal-btn';
+                    clearBtn.textContent = 'クリアして適用';
+                    clearBtn.style.color = '#e63946'; // 警告色
+                    clearBtn.onclick = function () {
+                        overlay.style.display = 'none';
+                        resolve('clear');
+                    };
+
+                    var addBtn = document.createElement('button');
+                    addBtn.className = 'custom-modal-btn';
+                    addBtn.textContent = '重ねて追加';
+                    addBtn.style.color = '#1DB446'; // 安全色
+                    addBtn.onclick = function () {
+                        overlay.style.display = 'none';
+                        resolve('add');
+                    };
+
+                    var cancelBtn = document.createElement('button');
+                    cancelBtn.className = 'custom-modal-btn cancel';
+                    cancelBtn.textContent = 'キャンセル';
+                    cancelBtn.onclick = function () {
+                        overlay.style.display = 'none';
+                        resolve('cancel');
+                    };
+
+                    footerElem.appendChild(clearBtn);
+                    footerElem.appendChild(addBtn);
                     footerElem.appendChild(cancelBtn);
                 } else if (type === 'confirm') {
                     // キャンセルとOK
