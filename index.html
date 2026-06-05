@@ -1668,6 +1668,36 @@
             });
         }
 
+        window._currentUserHistory = [];
+        var _historyLoadCounter = 0;
+        function loadUserOrderHistory(userId) {
+            if (!userId) return;
+            var currentCounter = ++_historyLoadCounter;
+            var params = 'api=getOrderHistory&userId=' + encodeURIComponent(userId);
+            if (lineUserId) params += '&lineId=' + encodeURIComponent(lineUserId);
+
+            gasJsonpFetch(params).then(function (res) {
+                if (currentCounter === _historyLoadCounter) {
+                    window._currentUserHistory = res.orders || [];
+                    console.log('Successfully cached user history count:', window._currentUserHistory.length);
+                }
+            }).catch(function (err) {
+                console.error('Failed to load user history:', err);
+            });
+        }
+
+        function normalizeDateString(dateStr) {
+            if (!dateStr) return "";
+            var parts = dateStr.split('/');
+            if (parts.length === 3) {
+                var y = parts[0];
+                var m = parts[1].length === 1 ? '0' + parts[1] : parts[1];
+                var d = parts[2].length === 1 ? '0' + parts[2] : parts[2];
+                return y + '/' + m + '/' + d;
+            }
+            return dateStr;
+        }
+
         function renderCalendar() {
             var container = document.getElementById('calendarContainer');
             container.innerHTML = '';
@@ -1680,6 +1710,9 @@
                 container.innerHTML = '<div style="text-align:center; padding:20px;">注文できない状態です</div>';
                 return;
             }
+
+            // 選択されたユーザーの履歴を非同期で先読み
+            loadUserOrderHistory(selectedOption.value);
 
             var deliveryType = (selectedOption.dataset.deliveryType || "").toString().trim();
             
@@ -2022,6 +2055,37 @@
                         resolve(true);
                     };
                     footerElem.appendChild(okBtn);
+                } else if (type === 'three_button') {
+                    // 上書き・追加・キャンセル
+                    var overwriteBtn = document.createElement('button');
+                    overwriteBtn.className = 'custom-modal-btn';
+                    overwriteBtn.textContent = '上書き(更新)';
+                    overwriteBtn.style.color = '#e63946'; // 警告色
+                    overwriteBtn.onclick = function () {
+                        overlay.style.display = 'none';
+                        resolve('overwrite');
+                    };
+
+                    var appendBtn = document.createElement('button');
+                    appendBtn.className = 'custom-modal-btn';
+                    appendBtn.textContent = '追加購入';
+                    appendBtn.style.color = '#1DB446'; // 安全色
+                    appendBtn.onclick = function () {
+                        overlay.style.display = 'none';
+                        resolve('append');
+                    };
+
+                    var cancelBtn = document.createElement('button');
+                    cancelBtn.className = 'custom-modal-btn cancel';
+                    cancelBtn.textContent = 'キャンセル';
+                    cancelBtn.onclick = function () {
+                        overlay.style.display = 'none';
+                        resolve('cancel');
+                    };
+
+                    footerElem.appendChild(overwriteBtn);
+                    footerElem.appendChild(appendBtn);
+                    footerElem.appendChild(cancelBtn);
                 } else if (type === 'confirm') {
                     // キャンセルとOK
                     var cancelBtn = document.createElement('button');
@@ -2213,43 +2277,76 @@
                         return;
                     }
 
-                    // ボタンを無効化して処理中を表示
-                    btn.disabled = true;
-                    btn.textContent = '送信中...';
-                    btn.style.backgroundColor = '#ccc';
-
-                    // 最終防衛線: 提出直前に lineUserId が無ければ再取得を試みる
-                    new Promise(function (resolveLastChance) {
-                        if (lineUserId) {
-                            resolveLastChance();
-                        } else if (typeof liff !== 'undefined' && liff.isLoggedIn && liff.isLoggedIn()) {
-                            liff.getProfile().then(function (p) {
-                                if (p && p.userId) lineUserId = p.userId;
-                                resolveLastChance();
-                            }).catch(function (e) {
-                                resolveLastChance();
-                            });
-                        } else {
-                            resolveLastChance();
+                    // 重複チェック
+                    var duplicateDates = [];
+                    orders.forEach(function (o) {
+                        var checkDate = normalizeDateString(o.date);
+                        var hasDuplicate = window._currentUserHistory.some(function (h) {
+                            return normalizeDateString(h.OrderDate) === checkDate;
+                        });
+                        if (hasDuplicate && duplicateDates.indexOf(checkDate) === -1) {
+                            var displayDate = o.date.split('/').slice(1).join('/'); // MM/DD
+                            duplicateDates.push(displayDate);
                         }
-                    }).then(function () {
-                        // ロード画面も出す
-                        document.getElementById('loading').style.display = 'flex';
-                        document.getElementById('loadingText').innerText = '送信しています...';
+                    });
 
-                        // 送信データ量を極限まで減らすため、注文リストを "YYYYMMDD:productId:quantity" 形式の圧縮文字列にする
-                        var compressedList = orders.map(function(o) {
-                            var cleanDate = o.date.replace(/\//g, '');
-                            return cleanDate + ':' + o.productId + ':' + o.quantity;
-                        }).join(',');
+                    var decisionPromise;
+                    if (duplicateDates.length > 0) {
+                        var dupMsg = '【重複確認】<br>' +
+                            '以下の日付は、すでに過去の注文が存在します：<br>' +
+                            '<strong style="color:#e63946;">' + duplicateDates.join(', ') + '</strong><br><br>' +
+                            '・<strong>上書き(更新)</strong>：過去の同日注文を自動削除し、今回の注文に差し替えます。<br>' +
+                            '・<strong>追加購入</strong>：過去の注文を残したまま、今回の注文を追加します。';
+                        decisionPromise = showModalAsync(dupMsg, 'three_button');
+                    } else {
+                        decisionPromise = Promise.resolve('append');
+                    }
 
-                        var orderData = {
-                            category: category,
-                            userId: userId,
-                            userName: userName,
-                            lineId: lineUserId,
-                            compressed: compressedList
-                        };
+                    decisionPromise.then(function (choice) {
+                        if (choice === 'cancel') {
+                            return;
+                        }
+
+                        var isOverwrite = (choice === 'overwrite');
+
+                        // ボタンを無効化して処理中を表示
+                        btn.disabled = true;
+                        btn.textContent = '送信中...';
+                        btn.style.backgroundColor = '#ccc';
+
+                        // 最終防衛線: 提出直前に lineUserId が無ければ再取得を試みる
+                        new Promise(function (resolveLastChance) {
+                            if (lineUserId) {
+                                resolveLastChance();
+                            } else if (typeof liff !== 'undefined' && liff.isLoggedIn && liff.isLoggedIn()) {
+                                liff.getProfile().then(function (p) {
+                                    if (p && p.userId) lineUserId = p.userId;
+                                    resolveLastChance();
+                                }).catch(function (e) {
+                                    resolveLastChance();
+                                });
+                            } else {
+                                resolveLastChance();
+                            }
+                        }).then(function () {
+                            // ロード画面も出す
+                            document.getElementById('loading').style.display = 'flex';
+                            document.getElementById('loadingText').innerText = '送信しています...';
+
+                            // 送信データ量を極限まで減らすため、注文リストを "YYYYMMDD:productId:quantity" 形式の圧縮文字列にする
+                            var compressedList = orders.map(function(o) {
+                                var cleanDate = o.date.replace(/\//g, '');
+                                return cleanDate + ':' + o.productId + ':' + o.quantity;
+                            }).join(',');
+
+                            var orderData = {
+                                category: category,
+                                userId: userId,
+                                userName: userName,
+                                lineId: lineUserId,
+                                compressed: compressedList,
+                                isOverwrite: isOverwrite
+                            };
                         gasJsonpFetch('api=submitOrders&data=' + encodeURIComponent(JSON.stringify(orderData)))
                             .then(function (rawRes) {
                                 var res = rawRes;
