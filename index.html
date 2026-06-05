@@ -2235,13 +2235,18 @@
                         document.getElementById('loading').style.display = 'flex';
                         document.getElementById('loadingText').innerText = '送信しています...';
 
-                        console.log('Calling submitOrders...');
+                        // 送信データ量を極限まで減らすため、注文リストを "YYYYMMDD:productId:quantity" 形式の圧縮文字列にする
+                        var compressedList = orders.map(function(o) {
+                            var cleanDate = o.date.replace(/\//g, '');
+                            return cleanDate + ':' + o.productId + ':' + o.quantity;
+                        }).join(',');
+
                         var orderData = {
                             category: category,
                             userId: userId,
                             userName: userName,
                             lineId: lineUserId,
-                            orders: orders
+                            compressed: compressedList
                         };
                         gasJsonpFetch('api=submitOrders&data=' + encodeURIComponent(JSON.stringify(orderData)))
                             .then(function (rawRes) {
