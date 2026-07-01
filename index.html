@@ -1062,6 +1062,12 @@
             }
 
             // 1.5. LINE IDでは紐付けされなかったが、localStorageに保存済みの場合
+            if (lineUserId && !data.isBound) {
+                try {
+                    localStorage.removeItem('walpass_bound_user');
+                } catch (e) { }
+            }
+
             if (!data.isBound && USERS.length > 0) {
                 try {
                     var savedUser = JSON.parse(localStorage.getItem('walpass_bound_user') || 'null');
@@ -1344,6 +1350,33 @@
             // 既存の内容をクリア
             userSelectArea.innerHTML = '';
 
+            // --- タブUIの構築 ---
+            var tabContainer = document.createElement('div');
+            tabContainer.style.cssText = 'display:flex; justify-content:space-between; margin-bottom:25px; border-bottom:2px solid #eee; padding-bottom:5px;';
+            
+            var tabSelect = document.createElement('div');
+            tabSelect.id = 'tabSelect';
+            tabSelect.style.cssText = 'flex:1; text-align:center; padding:10px; font-weight:bold; cursor:pointer; border-bottom:3px solid var(--primary-color); color:var(--primary-color); font-size:16px; transition: all 0.3s;';
+            tabSelect.textContent = 'お名前選択';
+            
+            var tabRegister = document.createElement('div');
+            tabRegister.id = 'tabRegister';
+            tabRegister.style.cssText = 'flex:1; text-align:center; padding:10px; font-weight:bold; cursor:pointer; border-bottom:3px solid transparent; color:#999; font-size:16px; transition: all 0.3s;';
+            tabRegister.textContent = '新規登録';
+            
+            tabContainer.appendChild(tabSelect);
+            tabContainer.appendChild(tabRegister);
+            userSelectArea.appendChild(tabContainer);
+
+            if (isRegisterMode) {
+                tabContainer.style.display = 'none'; // 登録（紐付け）モード時はタブを非表示に
+            }
+
+            // 既存UIを包むコンテナ
+            var bindUiContainer = document.createElement('div');
+            bindUiContainer.id = 'bindUiContainer';
+            userSelectArea.appendChild(bindUiContainer);
+
             // 共通: カテゴリー選択
             var catGroup = document.createElement('div');
             catGroup.className = 'form-group';
@@ -1357,7 +1390,7 @@
             catSelect.style.cssText = 'width:100%; padding:12px; margin-top:8px; border-radius:8px; border:1px solid #ddd; font-size:16px;';
             catGroup.appendChild(catLabel);
             catGroup.appendChild(catSelect);
-            userSelectArea.appendChild(catGroup);
+            bindUiContainer.appendChild(catGroup);
 
             // 共通: ユーザー選択 (初期は非表示)
             var userGroup = document.createElement('div');
@@ -1373,7 +1406,7 @@
             userSelect.style.cssText = 'width:100%; padding:12px; margin-top:8px; border-radius:8px; border:1px solid #ddd; font-size:16px;';
             userGroup.appendChild(userLabel);
             userGroup.appendChild(userSelect);
-            userSelectArea.appendChild(userGroup);
+            bindUiContainer.appendChild(userGroup);
 
             // 変数の準備
             var kanaInputGroup, kanaInput, oaLinkBtn, bindBtn;
@@ -1395,7 +1428,7 @@
                 kanaInput.style.cssText = 'width:100%; padding:12px; margin-top:8px; border-radius:8px; border:1px solid #ddd; font-size:16px;';
                 kanaInputGroup.appendChild(kanaLabel);
                 kanaInputGroup.appendChild(kanaInput);
-                userSelectArea.appendChild(kanaInputGroup);
+                bindUiContainer.appendChild(kanaInputGroup);
 
                 var btnWrapper = document.createElement('div');
                 btnWrapper.style.cssText = 'margin-top:20px; text-align:center;';
@@ -1406,7 +1439,7 @@
                 oaLinkBtn.textContent = '送信する';
 
                 btnWrapper.appendChild(oaLinkBtn);
-                userSelectArea.appendChild(btnWrapper);
+                bindUiContainer.appendChild(btnWrapper);
 
                 // --- 登録モードのイベント処理 ---
                 function updateLinkButton() {
@@ -1483,9 +1516,22 @@
                 bindBtn.id = 'bindBtn';
                 bindBtn.style.cssText = 'margin-top:20px; padding:15px; width:100%; background-color:#007AFF; color:white; border:none; border-radius:8px; font-weight:bold; font-size:18px; box-shadow: 0 4px 10px rgba(0,122,255,0.3);';
                 bindBtn.textContent = 'この名前で注文画面へ進む';
-                userSelectArea.appendChild(bindBtn);
+                bindUiContainer.appendChild(bindBtn);
 
                 // --- 通常モードのイベント処理 ---
+                userSelect.onchange = function () {
+                    if (this.value) {
+                        var kanjiName = userSelect.options[userSelect.selectedIndex].text;
+                        var delType = userSelect.options[userSelect.selectedIndex].dataset.deliveryType;
+                        localStorage.setItem('walpass_bound_user', JSON.stringify({
+                            userId: this.value,
+                            userName: kanjiName,
+                            deliveryType: delType || ''
+                        }));
+                        loadUserOrderHistory(this.value);
+                    }
+                };
+
                 bindBtn.onclick = function () {
                     var uid = userSelect.value;
                     if (!uid) { alert('お名前を選択してください'); return; }
@@ -1544,6 +1590,133 @@
                 catSelect.value = cats[0];
                 catSelect.onchange();
             }
+
+            // --- 【新規登録フォーム】の構築 ---
+            var selfRegisterForm = document.createElement('div');
+            selfRegisterForm.id = 'selfRegisterForm';
+            selfRegisterForm.style.cssText = 'display:none; margin-top:0;';
+            
+            var regTitle = document.createElement('h2');
+            regTitle.style.cssText = 'font-size:1.15rem; margin-top:0; margin-bottom:12px; border-bottom:1px solid #eee; padding-bottom:8px; display:flex; align-items:center; gap:6px;';
+            regTitle.innerHTML = '<span style="display:inline-block; width:4px; height:16px; background-color:var(--primary-color); border-radius:2px;"></span>新規メンバー登録';
+            selfRegisterForm.appendChild(regTitle);
+
+            var regCatLabel = document.createElement('label');
+            regCatLabel.htmlFor = 'regCategorySelect';
+            regCatLabel.style.cssText = 'font-weight:bold; color:#555;';
+            regCatLabel.textContent = 'STEP 1. カテゴリー（学年など）を選択';
+            var regCatSelect = document.createElement('select');
+            regCatSelect.id = 'regCategorySelect';
+            regCatSelect.style.cssText = 'width:100%; padding:12px; margin-top:8px; border-radius:8px; border:1px solid #ddd; font-size:16px; margin-bottom:15px;';
+            regCatSelect.innerHTML = '<option value="" disabled selected>カテゴリーを選んでください</option>';
+            cats.forEach(function (c) {
+                var op = document.createElement('option');
+                op.value = op.textContent = c;
+                regCatSelect.appendChild(op);
+            });
+            selfRegisterForm.appendChild(regCatLabel);
+            selfRegisterForm.appendChild(regCatSelect);
+
+            var regNameLabel = document.createElement('label');
+            regNameLabel.htmlFor = 'regNameInput';
+            regNameLabel.style.cssText = 'font-weight:bold; color:#555;';
+            regNameLabel.textContent = 'STEP 2. お名前（漢字）';
+            var regNameInput = document.createElement('input');
+            regNameInput.type = 'text';
+            regNameInput.id = 'regNameInput';
+            regNameInput.placeholder = '例：山田 太郎';
+            regNameInput.style.cssText = 'width:100%; padding:12px; margin-top:8px; border-radius:8px; border:1px solid #ddd; font-size:16px; margin-bottom:15px; box-sizing:border-box;';
+            selfRegisterForm.appendChild(regNameLabel);
+            selfRegisterForm.appendChild(regNameInput);
+
+            var regKanaLabel = document.createElement('label');
+            regKanaLabel.htmlFor = 'regKanaInput';
+            regKanaLabel.style.cssText = 'font-weight:bold; color:#555;';
+            regKanaLabel.textContent = 'STEP 3. お名前（フリガナ）';
+            var regKanaInput = document.createElement('input');
+            regKanaInput.type = 'text';
+            regKanaInput.id = 'regKanaInput';
+            regKanaInput.placeholder = '例：ヤマダ タロウ';
+            regKanaInput.style.cssText = 'width:100%; padding:12px; margin-top:8px; border-radius:8px; border:1px solid #ddd; font-size:16px; margin-bottom:20px; box-sizing:border-box;';
+            selfRegisterForm.appendChild(regKanaLabel);
+            selfRegisterForm.appendChild(regKanaInput);
+
+            var regSubmitBtn = document.createElement('button');
+            regSubmitBtn.style.cssText = 'padding:15px; width:100%; background-color:#28a745; color:white; border:none; border-radius:8px; font-weight:bold; font-size:18px; box-shadow: 0 4px 10px rgba(40,167,69,0.3);';
+            regSubmitBtn.textContent = '登録して注文に進む';
+            selfRegisterForm.appendChild(regSubmitBtn);
+
+            userSelectArea.appendChild(selfRegisterForm);
+
+            // --- タブ切り替えのイベント処理 ---
+            tabSelect.onclick = function() {
+                bindUiContainer.style.display = 'block';
+                selfRegisterForm.style.display = 'none';
+                
+                tabSelect.style.borderBottom = '3px solid var(--primary-color)';
+                tabSelect.style.color = 'var(--primary-color)';
+                tabRegister.style.borderBottom = '3px solid transparent';
+                tabRegister.style.color = '#999';
+            };
+
+            tabRegister.onclick = function() {
+                bindUiContainer.style.display = 'none';
+                selfRegisterForm.style.display = 'block';
+                
+                tabRegister.style.borderBottom = '3px solid var(--primary-color)';
+                tabRegister.style.color = 'var(--primary-color)';
+                tabSelect.style.borderBottom = '3px solid transparent';
+                tabSelect.style.color = '#999';
+            };
+
+            // 送信処理
+            regSubmitBtn.onclick = function() {
+                var cat = regCatSelect.value;
+                var name = regNameInput.value.trim();
+                var kana = regKanaInput.value.trim();
+
+                if (!cat) { alert('カテゴリー（学年）を選択してください'); return; }
+                if (!name) { alert('お名前（漢字）を入力してください'); regNameInput.focus(); return; }
+                if (!kana) { alert('お名前（フリガナ）を入力してください'); regKanaInput.focus(); return; }
+
+                regSubmitBtn.disabled = true;
+                regSubmitBtn.textContent = '登録中...';
+                regSubmitBtn.style.backgroundColor = '#ccc';
+
+                var params = 'api=registerNewUser&name=' + encodeURIComponent(name) +
+                             '&kana=' + encodeURIComponent(kana) +
+                             '&category=' + encodeURIComponent(cat) +
+                             '&team=' + encodeURIComponent(urlTeamCode || '') +
+                             '&lineId=' + encodeURIComponent(lineUserId || '');
+
+                gasJsonpFetch(params).then(function(res) {
+                    if (res && res.success) {
+                        alert(res.message || '登録が完了しました！');
+                        
+                        // 後の表示のためにlocalStorageに保存
+                        try {
+                            localStorage.setItem('walpass_bound_user', JSON.stringify({
+                                userId: res.userId,
+                                userName: name,
+                                deliveryType: ''
+                            }));
+                        } catch (e) { }
+
+                        // ページを再読み込みしてカレンダーへ遷移させる
+                        window.location.reload();
+                    } else {
+                        alert('登録に失敗しました: ' + (res.message || '不明なエラー'));
+                        regSubmitBtn.disabled = false;
+                        regSubmitBtn.textContent = '登録して注文に進む';
+                        regSubmitBtn.style.backgroundColor = '#28a745';
+                    }
+                }).catch(function(err) {
+                    alert('通信エラーが発生しました: ' + err.toString());
+                    regSubmitBtn.disabled = false;
+                    regSubmitBtn.textContent = '登録して注文に進む';
+                    regSubmitBtn.style.backgroundColor = '#28a745';
+                });
+            };
 
             // 注文部品等は隠す
             document.getElementById('calendarContainer').style.display = 'none';
