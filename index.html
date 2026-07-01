@@ -1620,11 +1620,11 @@
             var regNameLabel = document.createElement('label');
             regNameLabel.htmlFor = 'regNameInput';
             regNameLabel.style.cssText = 'font-weight:bold; color:#555;';
-            regNameLabel.textContent = 'STEP 2. お名前（漢字）';
+            regNameLabel.textContent = 'STEP 2. お名前（漢字）※選手名';
             var regNameInput = document.createElement('input');
             regNameInput.type = 'text';
             regNameInput.id = 'regNameInput';
-            regNameInput.placeholder = '例：山田 太郎';
+            regNameInput.placeholder = '例：山田 太郎（選手の名前）';
             regNameInput.style.cssText = 'width:100%; padding:12px; margin-top:8px; border-radius:8px; border:1px solid #ddd; font-size:16px; margin-bottom:15px; box-sizing:border-box;';
             selfRegisterForm.appendChild(regNameLabel);
             selfRegisterForm.appendChild(regNameInput);
@@ -1632,11 +1632,11 @@
             var regKanaLabel = document.createElement('label');
             regKanaLabel.htmlFor = 'regKanaInput';
             regKanaLabel.style.cssText = 'font-weight:bold; color:#555;';
-            regKanaLabel.textContent = 'STEP 3. お名前（フリガナ）';
+            regKanaLabel.textContent = 'STEP 3. お名前（フリガナ）※選手名';
             var regKanaInput = document.createElement('input');
             regKanaInput.type = 'text';
             regKanaInput.id = 'regKanaInput';
-            regKanaInput.placeholder = '例：ヤマダ タロウ';
+            regKanaInput.placeholder = '例：ヤマダ タロウ（選手の名前）';
             regKanaInput.style.cssText = 'width:100%; padding:12px; margin-top:8px; border-radius:8px; border:1px solid #ddd; font-size:16px; margin-bottom:20px; box-sizing:border-box;';
             selfRegisterForm.appendChild(regKanaLabel);
             selfRegisterForm.appendChild(regKanaInput);
