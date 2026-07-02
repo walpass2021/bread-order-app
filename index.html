@@ -485,12 +485,12 @@
             }
         }
 
-        /* 履歴画面のスタイル - プレミアムリニューアル */
+        /* 履歴画面のスタイル - プレミアムリニューアル（コンパクト＆開閉アコーディオン対応） */
         .history-card {
             background: var(--card-bg);
             border-radius: 16px;
-            margin-bottom: 24px;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.03);
+            margin-bottom: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
             border: 1px solid rgba(0, 0, 0, 0.04);
             overflow: hidden;
             position: relative;
@@ -500,7 +500,7 @@
         @keyframes slideUpFade {
             from {
                 opacity: 0;
-                transform: translateY(24px);
+                transform: translateY(20px);
             }
             to {
                 opacity: 1;
@@ -510,33 +510,63 @@
 
         .history-month-header {
             background: linear-gradient(135deg, var(--accent-color), #2c3e50);
-            padding: 16px 20px;
+            padding: 12px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             color: #ffffff;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s ease;
+        }
+
+        .history-month-header:active {
+            filter: brightness(0.95);
         }
 
         .history-month-title {
-            font-size: 1.15rem;
+            font-size: 1.05rem;
             font-weight: 800;
             letter-spacing: 0.5px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+        }
+
+        .history-month-header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .history-month-badge {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 3px 8px;
             border-radius: 20px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 600;
             backdrop-filter: blur(4px);
         }
 
+        .history-month-arrow {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            display: inline-block;
+        }
+
+        /* 閉じている時の矢印とボディ非表示設定 */
+        .history-card.collapsed .history-month-arrow {
+            transform: rotate(-90deg); /* 閉じている時は左横向き */
+        }
+
+        .history-card.collapsed .history-card-body,
+        .history-card.collapsed .history-footer-summary {
+            display: none;
+        }
+
         .history-card-body {
-            padding: 20px;
+            padding: 16px;
             position: relative;
         }
 
@@ -553,16 +583,16 @@
             position: absolute;
             top: 10px;
             bottom: 10px;
-            left: 18px;
+            left: 15px;
             width: 2px;
             background: #f1f3f5;
         }
 
         .history-item-timeline {
             position: relative;
-            padding-left: 38px;
-            margin-bottom: 20px;
-            min-height: 40px;
+            padding-left: 32px;
+            margin-bottom: 12px;
+            min-height: 36px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -578,7 +608,7 @@
             left: 0;
             top: 50%;
             transform: translateY(-50%);
-            width: 38px;
+            width: 32px;
             text-align: left;
             z-index: 1;
         }
@@ -588,11 +618,11 @@
             background: #f8f9fa;
             border: 2px solid #e9ecef;
             border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            line-height: 32px;
+            width: 30px;
+            height: 30px;
+            line-height: 26px;
             text-align: center;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 700;
             color: #495057;
             transition: all 0.25s ease;
@@ -611,7 +641,7 @@
             justify-content: space-between;
             align-items: center;
             background: #fafbfc;
-            padding: 12px 16px;
+            padding: 8px 12px;
             border-radius: 12px;
             border: 1px solid rgba(0,0,0,0.02);
             transition: all 0.2s ease;
@@ -627,27 +657,27 @@
         .history-item-details {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .history-item-icon {
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
 
         .history-item-name {
             font-weight: 600;
             color: #2b3a4a;
-            font-size: 0.92rem;
+            font-size: 0.88rem;
         }
 
         .history-item-qty {
-            font-size: 0.95rem;
+            font-size: 0.88rem;
             font-weight: 700;
             color: #495057;
             background: #e9ecef;
-            padding: 3px 8px;
+            padding: 2px 6px;
             border-radius: 6px;
-            min-width: 36px;
+            min-width: 32px;
             text-align: center;
         }
 
@@ -659,7 +689,7 @@
         /* フッターの合計表示 */
         .history-footer-summary {
             background: #f8fafc;
-            padding: 16px 20px;
+            padding: 12px 16px;
             border-top: 1px dashed #e2e8f0;
             display: flex;
             justify-content: space-between;
@@ -667,23 +697,22 @@
         }
 
         .history-total-label {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #64748b;
             font-weight: 600;
-            text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .history-total-amount-circle {
             background: linear-gradient(135deg, var(--primary-color), #ffb703);
             color: #ffffff;
-            padding: 0 12px;
-            height: 36px;
-            line-height: 36px;
+            padding: 0 10px;
+            height: 30px;
+            line-height: 30px;
             text-align: center;
-            border-radius: 18px;
+            border-radius: 15px;
             font-weight: 800;
-            font-size: 1.05rem;
+            font-size: 0.95rem;
             box-shadow: 0 4px 12px rgba(252, 163, 17, 0.3);
         }
     </style>
@@ -2862,23 +2891,29 @@
                                 d = new Date(dateVal);
                             }
                             var monthKey = d.getFullYear() + "年" + (d.getMonth() + 1) + "月";
-                            if (!grouped[monthKey]) grouped[monthKey] = { orders: [], totalQty: 0 };
+                            if (!grouped[monthKey]) grouped[monthKey] = { orders: [], totalQty: 0, totalAmount: 0 };
                             grouped[monthKey].orders.push({ ord: ord, parsedDate: d });
                             grouped[monthKey].totalQty += (parseInt(ord.Quantity) || 0);
+                            grouped[monthKey].totalAmount += (Number(ord.Price) || 0) * (parseInt(ord.Quantity) || 0);
                         });
 
                         var html = '<h2 style="text-align:center; font-size:1.2rem; margin-bottom:20px; font-weight: 800; color: var(--accent-color);">注文履歴（直近2ヶ月）</h2>';
 
                         // 月ごとにカードを作成
                         var months = Object.keys(grouped).sort().reverse(); // 新しい月順
-                        months.forEach(function (month) {
+                        months.forEach(function (month, index) {
                             var data = grouped[month];
                             
-                            html += '<div class="history-card">';
-                            // ヘッダー
-                            html += '  <div class="history-month-header">';
+                            // 1番目（最新月）は展開、2番目以降はデフォルト折りたたみ
+                            var collapsedClass = index > 0 ? ' collapsed' : '';
+                            html += '<div class="history-card' + collapsedClass + '">';
+                            // ヘッダー（クリックで開閉トグル）
+                            html += '  <div class="history-month-header" onclick="this.parentNode.classList.toggle(\'collapsed\')">';
                             html += '    <div class="history-month-title">📅 ' + month + '</div>';
-                            html += '    <div class="history-month-badge">' + data.orders.length + ' 件の配送</div>';
+                            html += '    <div class="history-month-header-right">';
+                            html += '      <div class="history-month-badge">' + data.orders.length + ' 件の配送</div>';
+                            html += '      <span class="history-month-arrow">▲</span>';
+                            html += '    </div>';
                             html += '  </div>';
                             
                             // ボディ（タイムライン）
@@ -2898,6 +2933,11 @@
                                     icon = "🥤";
                                 }
 
+                                var price = Number(ord.Price) || 0;
+                                var subtotal = price * (parseInt(ord.Quantity) || 0);
+                                var priceInfo = price > 0 ? '<span style="font-size:0.75rem; color:#888; margin-left:4px;">(¥' + price + ')</span>' : '';
+                                var amountDisplay = price > 0 ? '¥' + subtotal.toLocaleString() : (ord.Quantity || 0) + '個';
+
                                 html += '      <li class="history-item-timeline">';
                                 html += '        <div class="history-badge-date">';
                                 html += '          <span class="history-badge-date-inner">' + dateShort + '</span>';
@@ -2905,9 +2945,9 @@
                                 html += '        <div class="history-item-content">';
                                 html += '          <div class="history-item-details">';
                                 html += '            <span class="history-item-icon">' + icon + '</span>';
-                                html += '            <span class="history-item-name">' + pName + '</span>';
+                                html += '            <span class="history-item-name">' + pName + priceInfo + '</span>';
                                 html += '          </div>';
-                                html += '          <span class="history-item-qty">' + (ord.Quantity || 0) + '個</span>';
+                                html += '          <span class="history-item-qty">' + amountDisplay + '</span>';
                                 html += '        </div>';
                                 html += '      </li>';
                             });
@@ -2917,8 +2957,8 @@
 
                             // フッター
                             html += '  <div class="history-footer-summary">';
-                            html += '    <span class="history-total-label">月間合計個数</span>';
-                            html += '    <span class="history-total-amount-circle">' + data.totalQty + ' 個</span>';
+                            html += '    <span class="history-total-label">月間合計 (' + data.totalQty + '個)</span>';
+                            html += '    <span class="history-total-amount-circle">¥' + data.totalAmount.toLocaleString() + '</span>';
                             html += '  </div>';
                             
                             html += '</div>';
