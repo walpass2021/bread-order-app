@@ -485,68 +485,206 @@
             }
         }
 
-        /* 履歴画面のスタイル */
+        /* 履歴画面のスタイル - プレミアムリニューアル */
         .history-card {
             background: var(--card-bg);
-            border-radius: 12px;
-            padding: 15px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            position: relative;
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .history-month-header {
+            background: linear-gradient(135deg, var(--accent-color), #2c3e50);
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #ffffff;
+        }
+
+        .history-month-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-month-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            backdrop-filter: blur(4px);
+        }
+
+        .history-card-body {
+            padding: 20px;
+            position: relative;
+        }
+
+        /* タイムラインの縦線 */
+        .history-timeline {
+            position: relative;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .history-timeline::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            bottom: 10px;
+            left: 18px;
+            width: 2px;
+            background: #f1f3f5;
+        }
+
+        .history-item-timeline {
+            position: relative;
+            padding-left: 38px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            border-left: 5px solid var(--primary-color);
+            min-height: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
-        .history-month {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--accent-color);
-            margin-bottom: 12px;
+        .history-item-timeline:last-child {
+            margin-bottom: 0;
+        }
+
+        /* タイムラインのドットと日付 */
+        .history-badge-date {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 38px;
+            text-align: left;
+            z-index: 1;
+        }
+
+        .history-badge-date-inner {
+            display: inline-block;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            line-height: 32px;
+            text-align: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #495057;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .history-item-timeline:hover .history-badge-date-inner {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(252, 163, 17, 0.2);
+        }
+
+        .history-item-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fafbfc;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+        }
+
+        .history-item-timeline:hover .history-item-content {
+            background: #ffffff;
+            border-color: rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+            transform: translateX(2px);
+        }
+
+        .history-item-details {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-item-icon {
+            font-size: 1.1rem;
+        }
+
+        .history-item-name {
+            font-weight: 600;
+            color: #2b3a4a;
+            font-size: 0.92rem;
+        }
+
+        .history-item-qty {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #495057;
+            background: #e9ecef;
+            padding: 3px 8px;
+            border-radius: 6px;
+            min-width: 36px;
+            text-align: center;
+        }
+
+        .history-item-timeline:hover .history-item-qty {
+            background: rgba(252, 163, 17, 0.1);
+            color: var(--primary-color);
+        }
+
+        /* フッターの合計表示 */
+        .history-footer-summary {
+            background: #f8fafc;
+            padding: 16px 20px;
+            border-top: 1px dashed #e2e8f0;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .history-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px dashed #eee;
-            font-size: 0.9rem;
+        .history-total-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .history-item:last-child {
-            border-bottom: none;
-        }
-
-        .history-date {
-            color: #888;
-            font-size: 0.8rem;
-            width: 50px;
-        }
-
-        .history-name {
-            flex: 1;
-            padding: 0 10px;
-        }
-
-        .history-qty {
-            font-weight: bold;
-            color: #333;
-        }
-
-        .history-total-row {
-            margin-top: 15px;
-            padding-top: 10px;
-            border-top: 2px solid #eee;
-            text-align: right;
-            font-weight: bold;
-            color: var(--accent-color);
-        }
-
-        .history-total-amount {
-            color: #e63946;
-            font-size: 1.2rem;
-            margin-left: 10px;
+        .history-total-amount-circle {
+            background: linear-gradient(135deg, var(--primary-color), #ffb703);
+            color: #ffffff;
+            padding: 0 12px;
+            height: 36px;
+            line-height: 36px;
+            text-align: center;
+            border-radius: 18px;
+            font-weight: 800;
+            font-size: 1.05rem;
+            box-shadow: 0 4px 12px rgba(252, 163, 17, 0.3);
         }
     </style>
 </head>
@@ -2711,38 +2849,83 @@
                         // 月ごとにグループ化
                         var grouped = {};
                         res.orders.forEach(function (ord) {
-                            var d = new Date(ord.OrderDate);
+                            var dateVal = ord.OrderDate;
+                            var d;
+                            if (typeof dateVal === 'string') {
+                                var parts = dateVal.split(/[-/]/);
+                                if (parts.length >= 3) {
+                                    d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                                } else {
+                                    d = new Date(dateVal);
+                                }
+                            } else {
+                                d = new Date(dateVal);
+                            }
                             var monthKey = d.getFullYear() + "年" + (d.getMonth() + 1) + "月";
                             if (!grouped[monthKey]) grouped[monthKey] = { orders: [], totalQty: 0 };
-                            grouped[monthKey].orders.push(ord);
+                            grouped[monthKey].orders.push({ ord: ord, parsedDate: d });
                             grouped[monthKey].totalQty += (parseInt(ord.Quantity) || 0);
                         });
 
-                        var html = '<h2 style="text-align:center; font-size:1.2rem; margin-bottom:20px;">注文履歴（直近2ヶ月）</h2>';
+                        var html = '<h2 style="text-align:center; font-size:1.2rem; margin-bottom:20px; font-weight: 800; color: var(--accent-color);">注文履歴（直近2ヶ月）</h2>';
 
                         // 月ごとにカードを作成
                         var months = Object.keys(grouped).sort().reverse(); // 新しい月順
                         months.forEach(function (month) {
                             var data = grouped[month];
+                            
                             html += '<div class="history-card">';
-                            html += '<div class="history-month"><span>' + month + '</span><span style="font-size:0.9rem; color:#666;">' + data.orders.length + '件</span></div>';
+                            // ヘッダー
+                            html += '  <div class="history-month-header">';
+                            html += '    <div class="history-month-title">📅 ' + month + '</div>';
+                            html += '    <div class="history-month-badge">' + data.orders.length + ' 件の配送</div>';
+                            html += '  </div>';
+                            
+                            // ボディ（タイムライン）
+                            html += '  <div class="history-card-body">';
+                            html += '    <ul class="history-timeline">';
 
-                            data.orders.forEach(function (ord) {
-                                var d = new Date(ord.OrderDate);
+                            data.orders.forEach(function (item) {
+                                var ord = item.ord;
+                                var d = item.parsedDate;
                                 var dateShort = (d.getMonth() + 1) + "/" + d.getDate();
-                                html += '<div class="history-item">';
-                                html += '<span class="history-date">' + dateShort + '</span>';
-                                html += '<span class="history-name">' + (ord.ProductName || '不明な商品') + '</span>';
-                                html += '<span class="history-qty">' + (ord.Quantity || 0) + '個</span>';
-                                html += '</div>';
+                                
+                                var icon = "🍞";
+                                var pName = ord.ProductName || "商品";
+                                if (pName.indexOf("弁当") !== -1 || pName.indexOf("べんとう") !== -1) {
+                                    icon = "🍱";
+                                } else if (pName.indexOf("ゼリー") !== -1 || pName.indexOf("ドリンク") !== -1) {
+                                    icon = "🥤";
+                                }
+
+                                html += '      <li class="history-item-timeline">';
+                                html += '        <div class="history-badge-date">';
+                                html += '          <span class="history-badge-date-inner">' + dateShort + '</span>';
+                                html += '        </div>';
+                                html += '        <div class="history-item-content">';
+                                html += '          <div class="history-item-details">';
+                                html += '            <span class="history-item-icon">' + icon + '</span>';
+                                html += '            <span class="history-item-name">' + pName + '</span>';
+                                html += '          </div>';
+                                html += '          <span class="history-item-qty">' + (ord.Quantity || 0) + '個</span>';
+                                html += '        </div>';
+                                html += '      </li>';
                             });
 
-                            html += '<div class="history-total-row">合計 <span class="history-total-amount">' + data.totalQty + ' 個</span></div>';
+                            html += '    </ul>';
+                            html += '  </div>';
+
+                            // フッター
+                            html += '  <div class="history-footer-summary">';
+                            html += '    <span class="history-total-label">月間合計個数</span>';
+                            html += '    <span class="history-total-amount-circle">' + data.totalQty + ' 個</span>';
+                            html += '  </div>';
+                            
                             html += '</div>';
                         });
 
                         // 戻るボタン
-                        html += '<button onclick="urlMode=null; localStorage.removeItem(\'walpass_mode\'); renderCalendar(); renderCycleUI(); document.querySelector(\'footer\').style.display=\'block\'; document.getElementById(\'cycleSelectArea\').style.display=\'\'; this.parentNode.querySelector(\'h2\').remove(); this.nextElementSibling.remove(); this.remove();" style="width:100%; padding:15px; background:#888; color:white; border:none; border-radius:8px; font-weight:bold; margin-top:10px; margin-bottom:10px;">注文画面に戻る</button>';
+                        html += '<button onclick="urlMode=null; localStorage.removeItem(\'walpass_mode\'); renderCalendar(); renderCycleUI(); document.querySelector(\'footer\').style.display=\'block\'; document.getElementById(\'cycleSelectArea\').style.display=\'\'; this.parentNode.querySelector(\'h2\').remove(); this.nextElementSibling.remove(); this.remove();" style="width:100%; padding:15px; background:var(--accent-color); color:white; border:none; border-radius:12px; font-weight:bold; margin-top:10px; margin-bottom:15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor:pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1">注文画面に戻る</button>';
 
                         // ログアウト（リセット）ボタン - テストや切り替え用
                         html += '<button onclick="if(confirm(\'ログアウトしてユーザー登録を解除しますか？\')){localStorage.clear(); localStorage.setItem(\'walpass_logged_out\',\'1\'); var base=window.location.href.split(\'?\')[0]; window.location.href=base+\'?mode=register\' + (urlTeamCode ? \'&team=\'+urlTeamCode : \'\')}" style="width:100%; padding:15px; background:#e74c3c; color:white; border:none; border-radius:8px; font-weight:bold; margin-bottom:40px;">ログアウト（別の名前で登録し直す）</button>';
