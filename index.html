@@ -1084,12 +1084,12 @@
             document.getElementById('loading').style.display = 'flex';
             document.getElementById('loadingText').innerText = "Please wait...";
 
-            // タイムアウト設定(15秒)
+            // タイムアウト設定(30秒に延長してサーバー遅延によるエラーを回避)
             var isTimeout = false;
             var fallbackTimer = setTimeout(function () {
                 isTimeout = true;
                 onFailure(new Error("サーバーからの応答がタイムアウトしました。通信環境を確認するか、再度読み込んでください。"));
-            }, 15000);
+            }, 30000);
 
             try {
                 var params = 'api=getInitialData';
