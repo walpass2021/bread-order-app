@@ -1095,6 +1095,7 @@
                 var params = 'api=getInitialData';
                 if (lineUserId) params += '&lineId=' + encodeURIComponent(lineUserId);
                 if (urlTeamCode) params += '&teamCode=' + encodeURIComponent(urlTeamCode);
+                if (urlMode) params += '&mode=' + encodeURIComponent(urlMode);
 
                 gasJsonpFetch(params)
                     .then(function (data) {
@@ -1938,7 +1939,9 @@
             }
 
             if (urlMode === 'history') {
-                setTimeout(renderHistoryView, 300);
+                setTimeout(function () {
+                    renderHistoryView(data.orders);
+                }, 300);
             }
         }
 
