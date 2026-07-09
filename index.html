@@ -2268,7 +2268,7 @@
                     });
 
                     if (totalQty < minOrderCount) {
-                        showModalAsync('今月の注文個数は合計 ' + totalQty + ' 個です。\nこのチームの最低注文個数は ' + minOrderCount + ' 個です。\nあと ' + (minOrderCount - totalQty) + ' 個以上注文してください。', 'alert');
+                        showModalAsync('ご注文ありがとうございます。現在の注文数は合計 ' + totalQty + ' 個です。\n\n大変恐れ入りますが、このチームは最低 ' + minOrderCount + ' 個からのご注文となります。\nあと ' + (minOrderCount - totalQty) + ' 個以上ご選択いただくようお願いいたします。🙇‍♀️', 'alert');
                         return;
                     }
                 }
