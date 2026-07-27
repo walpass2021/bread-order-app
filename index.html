@@ -2540,9 +2540,14 @@
                         res.orders.forEach(function (ord) {
                             var d = new Date(ord.OrderDate);
                             var monthKey = d.getFullYear() + "年" + (d.getMonth() + 1) + "月";
-                            if (!grouped[monthKey]) grouped[monthKey] = { orders: [], totalQty: 0 };
+                            if (!grouped[monthKey]) grouped[monthKey] = { orders: [], totalQty: 0, totalAmount: 0 };
                             grouped[monthKey].orders.push(ord);
                             grouped[monthKey].totalQty += (parseInt(ord.Quantity) || 0);
+                            
+                            // 金額の加算
+                            var qty = parseInt(ord.Quantity) || 0;
+                            var price = Number(ord.Price || ord.price) || 0;
+                            grouped[monthKey].totalAmount += (qty * price);
                         });
 
                         var html = '<h2 style="text-align:center; font-size:1.2rem; margin-bottom:20px;">注文履歴（直近2ヶ月）</h2>';
@@ -2557,14 +2562,18 @@
                             data.orders.forEach(function (ord) {
                                 var d = new Date(ord.OrderDate);
                                 var dateShort = (d.getMonth() + 1) + "/" + d.getDate();
+                                var qty = parseInt(ord.Quantity) || 0;
+                                var price = Number(ord.Price || ord.price) || 0;
+                                var itemAmount = qty * price;
+                                
                                 html += '<div class="history-item">';
                                 html += '<span class="history-date">' + dateShort + '</span>';
                                 html += '<span class="history-name">' + (ord.ProductName || '不明な商品') + '</span>';
-                                html += '<span class="history-qty">' + (ord.Quantity || 0) + '個</span>';
+                                html += '<span class="history-qty">' + qty + '個 (¥' + itemAmount.toLocaleString() + ')</span>';
                                 html += '</div>';
                             });
 
-                            html += '<div class="history-total-row">合計 <span class="history-total-amount">' + data.totalQty + ' 個</span></div>';
+                            html += '<div class="history-total-row">合計 <span class="history-total-amount">' + data.totalQty + ' 個 / ¥' + data.totalAmount.toLocaleString() + '</span></div>';
                             html += '</div>';
                         });
 
