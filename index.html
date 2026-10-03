@@ -175,35 +175,62 @@
             opacity: 0.8;
         }
 
-        /* 前月注文コピー機能エリア */
-        .repeat-order-area {
+        /* 一括入力アシストツールバー（案2: 横並びスマートボタン） */
+        .bulk-action-toolbar {
             margin-bottom: 20px;
-            background: linear-gradient(135deg, #f0fdf4 0%, #e8f5e9 100%);
-            border: 1px solid #bbf7d0;
-            border-radius: 12px;
-            padding: 14px 16px;
-            text-align: center;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
         }
 
-        .repeat-order-btn {
-            background-color: #16a34a;
-            color: #fff;
-            border: none;
-            padding: 11px 20px;
-            border-radius: 8px;
-            font-size: 0.95rem;
+        .bulk-toolbar-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .bulk-tool-btn {
+            flex: 1;
+            padding: 12px 10px;
+            border-radius: 10px;
+            font-size: 0.92rem;
             font-weight: bold;
             cursor: pointer;
-            width: 100%;
-            max-width: 320px;
-            box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border: 1px solid transparent;
+            text-align: center;
         }
 
-        .repeat-order-btn:active {
-            opacity: 0.85;
+        .bulk-tool-btn:active {
             transform: scale(0.98);
+        }
+
+        .btn-repeat {
+            background-color: #f0fdf4;
+            color: #166534;
+            border-color: #86efac;
+        }
+
+        .btn-repeat:hover {
+            background-color: #dcfce7;
+        }
+
+        .btn-cycle {
+            background-color: #f8fafc;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+
+        .btn-cycle:hover {
+            background-color: #f1f5f9;
+        }
+
+        .btn-cycle.active {
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            border-color: #93c5fd;
         }
 
         /* カレンダー（リスト形式） */
@@ -619,30 +646,29 @@
             </select>
         </div>
 
-        <!-- 前月コピー操作エリア -->
-        <div id="repeatOrderArea" class="repeat-order-area" style="display: none;">
-            <div style="font-size: 0.85rem; color: #166534; font-weight: bold; margin-bottom: 8px;">
-                💡 前回と同じメニューを注文する場合
+        <!-- 一括入力アシストツールバー（案2: 横並びボタン＋折りたたみ） -->
+        <div id="bulkActionToolbar" class="bulk-action-toolbar" style="display: none;">
+            <div class="bulk-toolbar-buttons">
+                <button type="button" id="btnRepeatLastMonth" class="bulk-tool-btn btn-repeat" onclick="applyPreviousMonthOrder()">
+                    <span>📋</span> 前月と同じにする
+                </button>
+                <button type="button" id="btnToggleCycle" class="bulk-tool-btn btn-cycle" onclick="toggleCycleArea()">
+                    <span>🔄</span> サイクル作成 <span id="cycleToggleArrow" style="font-size:0.75rem; margin-left:2px;">▼</span>
+                </button>
             </div>
-            <button type="button" id="btnRepeatLastMonth" class="repeat-order-btn" onclick="applyPreviousMonthOrder()">
-                📋 前月と同じ内容をセットする
-            </button>
-            <div style="font-size: 0.75rem; color: #64748b; margin-top: 6px; line-height: 1.4;">
-                ※前回の配送日順に各パンの数量を自動入力します。<br>反映後に数量の確認や微調整（＋−）が可能です。
-            </div>
-        </div>
 
-        <!-- サイクル自動設定エリア -->
-        <div id="cycleSelectArea" class="cycle-select-area">
-            <label style="color:#1DB446;">サイクルを自動作成（任意）</label>
-            <div class="cycle-desc">
-                順番に食べたいパンをタップしてください。選択した順番で全ての日程に自動で1個ずつ割り当てます。<br>
-                ※「追加」を選ぶことで、別のサイクルを複数回重ねて適用することも可能です。
+            <!-- サイクル自動設定エリア（ボタンを押した時のみ展開） -->
+            <div id="cycleSelectArea" class="cycle-select-area" style="display: none;">
+                <label style="color:#1DB446; font-size: 0.9rem;">サイクルを自動作成（任意）</label>
+                <div class="cycle-desc">
+                    順番に食べたいパンをタップしてください。選択した順番で全ての日程に自動で1個ずつ割り当てます。<br>
+                    ※「追加」を選ぶことで、別のサイクルを複数回重ねて適用することも可能です。
+                </div>
+                <div id="cycleItemsContainer" class="cycle-items">
+                    <!-- JSで商品タグを生成 -->
+                </div>
+                <button type="button" class="apply-cycle-btn" onclick="applyCycle()">このサイクルで一括入力する</button>
             </div>
-            <div id="cycleItemsContainer" class="cycle-items">
-                <!-- JSで商品タグを生成 -->
-            </div>
-            <button type="button" class="apply-cycle-btn" onclick="applyCycle()">このサイクルで一括入力する</button>
         </div>
 
         <!-- メインのカレンダー描画エリア -->
@@ -783,8 +809,8 @@
                     const cat = this.value;
                     renderUserSelect(cat);
                     document.getElementById('calendarContainer').innerHTML = '<div style="text-align:center; padding:20px;">お名前を選択してください</div>';
-                    document.getElementById('cycleSelectArea').style.display = 'none';
-                    if (document.getElementById('repeatOrderArea')) document.getElementById('repeatOrderArea').style.display = 'none';
+                    var toolbar = document.getElementById('bulkActionToolbar');
+                    if (toolbar) toolbar.style.display = 'none';
                 });
 
                 document.getElementById('userSelect').addEventListener('change', function () {
@@ -1206,14 +1232,11 @@
             } else if (!isRestricted) {
                 renderCalendar();
                 renderCycleUI();
-                // サイクル非表示設定があれば、念のため非表示を保証
-                if (teamSettings && teamSettings.hideCycle) {
-                    document.getElementById('cycleSelectArea').style.display = 'none';
-                }
             } else {
                 // 制限中の場合はエリアを完全にクリア
                 document.getElementById('calendarContainer').innerHTML = '';
-                document.getElementById('cycleSelectArea').style.display = 'none';
+                var toolbar = document.getElementById('bulkActionToolbar');
+                if (toolbar) toolbar.style.display = 'none';
             }
         }
 
@@ -1592,7 +1615,8 @@
 
             // 注文部品等は隠す
             document.getElementById('calendarContainer').style.display = 'none';
-            document.getElementById('cycleSelectArea').style.display = 'none';
+            var toolbar = document.getElementById('bulkActionToolbar');
+            if (toolbar) toolbar.style.display = 'none';
             document.querySelector('footer').style.display = 'none';
         }
 
@@ -1631,11 +1655,13 @@
 
             if (isRestricted) {
                 document.getElementById('calendarContainer').innerHTML = '<div style="text-align:center; padding:20px; color:#c53030; font-weight:bold;">現在、注文機能は制限されています。</div>';
-                document.getElementById('cycleSelectArea').style.display = 'none';
+                var toolbar = document.getElementById('bulkActionToolbar');
+                if (toolbar) toolbar.style.display = 'none';
                 document.querySelector('footer').style.display = 'none';
             } else {
                 document.getElementById('calendarContainer').style.display = 'block';
-                document.getElementById('cycleSelectArea').style.display = 'block';
+                var toolbar = document.getElementById('bulkActionToolbar');
+                if (toolbar) toolbar.style.display = 'block';
                 document.querySelector('footer').style.display = 'block';
                 updateTermsVisibility();
                 renderCalendar();
@@ -1750,12 +1776,12 @@
 
             var userSelect = document.getElementById('userSelect');
             var selectedOption = userSelect.options[userSelect.selectedIndex];
-            var repeatArea = document.getElementById('repeatOrderArea');
+            var toolbar = document.getElementById('bulkActionToolbar');
 
             if (!selectedOption || !selectedOption.value) {
                 // ユーザーが選ばれていない
                 container.innerHTML = '<div style="text-align:center; padding:20px;">注文できない状態です</div>';
-                if (repeatArea) repeatArea.style.display = 'none';
+                if (toolbar) toolbar.style.display = 'none';
                 return;
             }
 
@@ -1766,7 +1792,7 @@
             
             if (!deliveryType || deliveryType.indexOf('不可') !== -1) {
                 container.innerHTML = '';
-                if (repeatArea) repeatArea.style.display = 'none';
+                if (toolbar) toolbar.style.display = 'none';
                 return;
             }
 
@@ -1860,9 +1886,9 @@
 
             if (!hasAvailableDays) {
                 container.innerHTML = '<div style="text-align:center; padding:20px;">注文可能な配送日がありません</div>';
-                if (repeatArea) repeatArea.style.display = 'none';
+                if (toolbar) toolbar.style.display = 'none';
             } else {
-                if (repeatArea) repeatArea.style.display = 'block';
+                if (toolbar) toolbar.style.display = 'block';
             }
         }
 
@@ -1945,22 +1971,48 @@
             return year + '/' + month + '/' + day;
         }
 
+        // --- サイクル開閉トグル（案2: 折りたたみアコーディオン） ---
+        function toggleCycleArea() {
+            var cycleArea = document.getElementById('cycleSelectArea');
+            var arrow = document.getElementById('cycleToggleArrow');
+            var btn = document.getElementById('btnToggleCycle');
+            if (!cycleArea) return;
+
+            var isCurrentlyHidden = (cycleArea.style.display === 'none' || cycleArea.style.display === '');
+            if (isCurrentlyHidden) {
+                cycleArea.style.display = 'block';
+                if (arrow) arrow.textContent = '▲';
+                if (btn) btn.classList.add('active');
+            } else {
+                cycleArea.style.display = 'none';
+                if (arrow) arrow.textContent = '▼';
+                if (btn) btn.classList.remove('active');
+            }
+        }
+
         // --- サイクル作成UI関連 ---
         function renderCycleUI() {
             var cycleArea = document.getElementById('cycleSelectArea');
             var container = document.getElementById('cycleItemsContainer');
+            var cycleBtn = document.getElementById('btnToggleCycle');
+            var arrow = document.getElementById('cycleToggleArrow');
 
-            // チーム設定でサイクル非表示が指定されている場合は、非表示にして早期リターン
+            // チーム設定でサイクル非表示が指定されている場合は、ボタンごと非表示にして早期リターン
             var settings = window._cachedTeamSettings;
             if (settings && settings.hideCycle) {
-                cycleArea.style.display = 'none';
+                if (cycleBtn) cycleBtn.style.display = 'none';
+                if (cycleArea) cycleArea.style.display = 'none';
                 return;
+            } else {
+                if (cycleBtn) cycleBtn.style.display = 'flex';
             }
 
-            // リセット
+            // リセット（初期状態は折りたたんで非表示）
             cycleSelection = [];
             container.innerHTML = '';
-            cycleArea.style.display = 'block';
+            if (cycleArea) cycleArea.style.display = 'none';
+            if (arrow) arrow.textContent = '▼';
+            if (cycleBtn) cycleBtn.classList.remove('active');
 
             PRODUCTS.forEach(function (prod) {
                 var item = document.createElement('div');
@@ -2721,9 +2773,8 @@
 
             // 注文用のUIを隠す
             if (footer) footer.style.display = 'none';
-            if (cycleArea) cycleArea.style.display = 'none';
-            var repeatArea = document.getElementById('repeatOrderArea');
-            if (repeatArea) repeatArea.style.display = 'none';
+            var toolbar = document.getElementById('bulkActionToolbar');
+            if (toolbar) toolbar.style.display = 'none';
 
             container.innerHTML = '<div style="text-align:center; padding: 20px;"><div class="spinner" style="margin: 0 auto 10px;"></div>Please wait...</div>';
 
