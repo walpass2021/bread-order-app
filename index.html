@@ -175,6 +175,37 @@
             opacity: 0.8;
         }
 
+        /* 前月注文コピー機能エリア */
+        .repeat-order-area {
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #f0fdf4 0%, #e8f5e9 100%);
+            border: 1px solid #bbf7d0;
+            border-radius: 12px;
+            padding: 14px 16px;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        }
+
+        .repeat-order-btn {
+            background-color: #16a34a;
+            color: #fff;
+            border: none;
+            padding: 11px 20px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            max-width: 320px;
+            box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
+            transition: all 0.2s;
+        }
+
+        .repeat-order-btn:active {
+            opacity: 0.85;
+            transform: scale(0.98);
+        }
+
         /* カレンダー（リスト形式） */
         .calendar-list {
             display: flex;
@@ -588,6 +619,19 @@
             </select>
         </div>
 
+        <!-- 前月コピー操作エリア -->
+        <div id="repeatOrderArea" class="repeat-order-area" style="display: none;">
+            <div style="font-size: 0.85rem; color: #166534; font-weight: bold; margin-bottom: 8px;">
+                💡 前回と同じメニューを注文する場合
+            </div>
+            <button type="button" id="btnRepeatLastMonth" class="repeat-order-btn" onclick="applyPreviousMonthOrder()">
+                📋 前月と同じ内容をセットする
+            </button>
+            <div style="font-size: 0.75rem; color: #64748b; margin-top: 6px; line-height: 1.4;">
+                ※前回の配送日順に各パンの数量を自動入力します。<br>反映後に数量の確認や微調整（＋−）が可能です。
+            </div>
+        </div>
+
         <!-- サイクル自動設定エリア -->
         <div id="cycleSelectArea" class="cycle-select-area">
             <label style="color:#1DB446;">サイクルを自動作成（任意）</label>
@@ -740,6 +784,7 @@
                     renderUserSelect(cat);
                     document.getElementById('calendarContainer').innerHTML = '<div style="text-align:center; padding:20px;">お名前を選択してください</div>';
                     document.getElementById('cycleSelectArea').style.display = 'none';
+                    if (document.getElementById('repeatOrderArea')) document.getElementById('repeatOrderArea').style.display = 'none';
                 });
 
                 document.getElementById('userSelect').addEventListener('change', function () {
@@ -1705,10 +1750,12 @@
 
             var userSelect = document.getElementById('userSelect');
             var selectedOption = userSelect.options[userSelect.selectedIndex];
+            var repeatArea = document.getElementById('repeatOrderArea');
 
             if (!selectedOption || !selectedOption.value) {
                 // ユーザーが選ばれていない
                 container.innerHTML = '<div style="text-align:center; padding:20px;">注文できない状態です</div>';
+                if (repeatArea) repeatArea.style.display = 'none';
                 return;
             }
 
@@ -1719,6 +1766,7 @@
             
             if (!deliveryType || deliveryType.indexOf('不可') !== -1) {
                 container.innerHTML = '';
+                if (repeatArea) repeatArea.style.display = 'none';
                 return;
             }
 
@@ -1812,6 +1860,9 @@
 
             if (!hasAvailableDays) {
                 container.innerHTML = '<div style="text-align:center; padding:20px;">注文可能な配送日がありません</div>';
+                if (repeatArea) repeatArea.style.display = 'none';
+            } else {
+                if (repeatArea) repeatArea.style.display = 'block';
             }
         }
 
@@ -2025,6 +2076,174 @@
                 });
 
                 showModalAsync('サイクルを適用しました！\n数や種類の微調整があれば手動で行ってください。', 'alert');
+            });
+        }
+
+        // --- 前月と同じ内容をセットする機能（案B: 配送日順マッピング） ---
+        function applyPreviousMonthOrder() {
+            var userSelect = document.getElementById('userSelect');
+            var selectedOption = userSelect.options[userSelect.selectedIndex];
+            if (!selectedOption || !selectedOption.value) {
+                showModalAsync('先にお名前を選択してください。', 'alert');
+                return;
+            }
+
+            var dayCards = document.querySelectorAll('.day-card');
+            if (dayCards.length === 0) {
+                showModalAsync('注文可能な配送日がありません。', 'alert');
+                return;
+            }
+
+            var userId = selectedOption.value;
+
+            // 履歴データ取得用関数（未キャッシュ時は取得）
+            function fetchHistoryIfNeeded() {
+                if (window._currentUserHistory && window._currentUserHistory.length > 0) {
+                    return Promise.resolve(window._currentUserHistory);
+                }
+                var loadingElem = document.getElementById('loading');
+                if (loadingElem) loadingElem.style.display = 'flex';
+                var loadingTextElem = document.getElementById('loadingText');
+                if (loadingTextElem) loadingTextElem.innerText = '過去の注文履歴を確認しています...';
+
+                var params = 'api=getOrderHistory&userId=' + encodeURIComponent(userId);
+                if (typeof lineUserId !== 'undefined' && lineUserId) {
+                    params += '&lineId=' + encodeURIComponent(lineUserId);
+                }
+
+                return gasJsonpFetch(params).then(function (res) {
+                    if (loadingElem) loadingElem.style.display = 'none';
+                    if (res && res.orders) {
+                        window._currentUserHistory = res.orders;
+                        return res.orders;
+                    }
+                    return [];
+                }).catch(function (err) {
+                    if (loadingElem) loadingElem.style.display = 'none';
+                    console.error('fetchHistory error:', err);
+                    return [];
+                });
+            }
+
+            fetchHistoryIfNeeded().then(function (historyOrders) {
+                if (!historyOrders || historyOrders.length === 0) {
+                    showModalAsync('過去の注文履歴が見つかりませんでした。\n\n初めてご注文の場合は、カレンダーまたはサイクル機能から直接ご入力ください。', 'alert');
+                    return;
+                }
+
+                // カレンダーの基準月（最初のカードの日付）
+                var firstCardDate = dayCards[0].dataset.date || ""; // YYYY/MM/DD
+                var firstCardNormalized = normalizeDateString(firstCardDate);
+                var currentCalendarYearMonth = firstCardNormalized.substring(0, 7); // "YYYY/MM"
+
+                // 過去の注文データから月（YYYY/MM）を収集
+                var pastMonthsMap = {};
+                var allMonthsMap = {};
+                historyOrders.forEach(function (h) {
+                    var dStr = normalizeDateString(h.OrderDate);
+                    if (dStr && dStr.length >= 7) {
+                        var ym = dStr.substring(0, 7);
+                        allMonthsMap[ym] = true;
+                        if (!currentCalendarYearMonth || ym < currentCalendarYearMonth) {
+                            pastMonthsMap[ym] = true;
+                        }
+                    }
+                });
+
+                // カレンダー表示月より過去の直近月、なければ全履歴中の直近月
+                var pastMonths = Object.keys(pastMonthsMap).sort();
+                var targetYearMonth = null;
+                if (pastMonths.length > 0) {
+                    targetYearMonth = pastMonths[pastMonths.length - 1];
+                } else {
+                    var allMonths = Object.keys(allMonthsMap).sort();
+                    if (allMonths.length > 0) {
+                        targetYearMonth = allMonths[allMonths.length - 1];
+                    }
+                }
+
+                if (!targetYearMonth) {
+                    showModalAsync('前月の注文履歴が見つかりませんでした。', 'alert');
+                    return;
+                }
+
+                // 対象月の注文を抽出
+                var monthOrders = historyOrders.filter(function (h) {
+                    var dStr = normalizeDateString(h.OrderDate);
+                    return dStr.indexOf(targetYearMonth) === 0;
+                });
+
+                // 配送日ごとにグループ化
+                var ordersByDate = {};
+                var prevDates = [];
+                monthOrders.forEach(function (h) {
+                    var dStr = normalizeDateString(h.OrderDate);
+                    var qty = parseInt(h.Quantity) || 0;
+                    if (qty > 0) {
+                        if (!ordersByDate[dStr]) {
+                            ordersByDate[dStr] = [];
+                            prevDates.push(dStr);
+                        }
+                        ordersByDate[dStr].push({
+                            productId: String(h.ProductID || "").trim(),
+                            productName: String(h.ProductName || "").trim(),
+                            quantity: qty
+                        });
+                    }
+                });
+
+                prevDates.sort(); // 昇順
+
+                if (prevDates.length === 0) {
+                    showModalAsync('前月（' + targetYearMonth + '）の有効な注文履歴がありませんでした。', 'alert');
+                    return;
+                }
+
+                // 表示用の月名
+                var ymParts = targetYearMonth.split('/');
+                var monthLabel = (ymParts.length === 2) ? parseInt(ymParts[1], 10) + '月度' : targetYearMonth;
+
+                var confirmMsg = '<div style="text-align:left; font-size:14px; line-height:1.6; padding:0 5px;">' +
+                                 '<strong style="font-size:15px; display:block; text-align:center; margin-bottom:10px;">前月の注文内容を反映しますか？</strong>' +
+                                 '前月（<strong>' + monthLabel + '</strong>、全<strong>' + prevDates.length + '回</strong>配送分）の注文内容を、今月のカレンダーに順番に自動入力します。<br><br>' +
+                                 '<span style="color:#e63946; font-size:12px; display:block;">※現在カレンダーに入力中の数量は上書きされます。</span>' +
+                                 '<span style="color:#666; font-size:12px; display:block;">※反映後も自由に数量の確認や微調整（＋−）が可能です。</span>' +
+                                 '</div>';
+
+                showModalAsync(confirmMsg, 'confirm').then(function (ok) {
+                    if (!ok) return;
+
+                    // 1. 全ての日カードの数量を一度0にクリア
+                    dayCards.forEach(function (card) {
+                        var inputs = card.querySelectorAll('.stepper input');
+                        inputs.forEach(function (inp) {
+                            inp.value = "0";
+                        });
+                    });
+
+                    // 2. 配送日順に前月の数量をセット（今月の方が多い場合は1回目に戻ってループ）
+                    var appliedDaysCount = 0;
+                    dayCards.forEach(function (card, index) {
+                        var pDateIndex = index % prevDates.length;
+                        var pDate = prevDates[pDateIndex];
+                        var itemsForThisDay = ordersByDate[pDate] || [];
+                        itemsForThisDay.forEach(function (item) {
+                            var targetInput = card.querySelector('input[data-product-id="' + item.productId + '"]');
+                            if (!targetInput && item.productName) {
+                                targetInput = card.querySelector('input[data-product-name="' + item.productName + '"]');
+                            }
+                            if (targetInput) {
+                                targetInput.value = item.quantity.toString();
+                            }
+                        });
+                        appliedDaysCount++;
+                    });
+
+                    var loopNote = (dayCards.length > prevDates.length) ? '（※今月の方が日数が多いため、余った日は1回目に戻って全日程を埋めています）\n' : '';
+                    var finishMsg = '前月（' + monthLabel + '）の内容を今月の全' + appliedDaysCount + '回分に反映しました！\n' + loopNote + '\n' +
+                                    '各日のパンの数量をご確認いただき、必要に応じて＋−で調整の上、一番下の【注文を確定する】ボタンを押してください。';
+                    showModalAsync(finishMsg, 'alert');
+                });
             });
         }
 
@@ -2503,6 +2722,8 @@
             // 注文用のUIを隠す
             if (footer) footer.style.display = 'none';
             if (cycleArea) cycleArea.style.display = 'none';
+            var repeatArea = document.getElementById('repeatOrderArea');
+            if (repeatArea) repeatArea.style.display = 'none';
 
             container.innerHTML = '<div style="text-align:center; padding: 20px;"><div class="spinner" style="margin: 0 auto 10px;"></div>Please wait...</div>';
 
