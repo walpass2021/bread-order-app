@@ -675,6 +675,18 @@
         <div id="calendarContainer" class="calendar-list">
             <div style="text-align:center; padding: 20px;">Please wait...</div>
         </div>
+
+        <!-- 注文締め切り案内カード（文言案A ＋ LINE誘導ボタン） -->
+        <div id="orderClosedNotice" style="display: none; background: white; border-radius: 12px; padding: 24px 20px; margin: 16px 0; border: 1px solid #fed7aa; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-align: center;">
+            <div style="font-size: 17px; font-weight: bold; color: #c2410c; margin-bottom: 12px;">⚠️ 今月の注文受付は終了いたしました</div>
+            <div style="font-size: 13.5px; color: #475569; line-height: 1.6; margin-bottom: 20px; text-align: left;">
+                受付期限を過ぎたため、画面からのご注文は締め切らせていただきました。<br><br>
+                ※どうしても追加・変更が必要な場合や、ご注文をお忘れの場合は、お手数ですが<strong>LINEトーク画面より直接ご連絡ください。</strong>
+            </div>
+            <a href="https://line.me/R/" target="_blank" style="display: inline-block; width: 100%; box-sizing: border-box; background-color: #06c755; color: white; padding: 12px 16px; border-radius: 8px; font-weight: bold; font-size: 15px; text-decoration: none; box-shadow: 0 2px 4px rgba(6,199,85,0.3); text-align: center;">
+                💬 LINEで管理者に相談する
+            </a>
+        </div>
     </div>
 
     <footer style="display: none;">
@@ -961,6 +973,22 @@
                         var titleElem = header.querySelector('h1');
                         if (titleElem) titleElem.style.color = textColor;
                     }
+                }
+
+                // 注文締め切り制御（締切超過かつ個別解除されていない場合はフォームを隠して案内カードを表示）
+                var closedNotice = document.getElementById('orderClosedNotice');
+                var calContainer = document.getElementById('calendarContainer');
+                var bulkToolbar = document.getElementById('bulkActionToolbar');
+                var footerElem = document.querySelector('footer');
+
+                if (settings.isOrderClosed && !settings.isSpecialUnlocked) {
+                    if (closedNotice) closedNotice.style.display = 'block';
+                    if (calContainer) calContainer.style.display = 'none';
+                    if (bulkToolbar) bulkToolbar.style.display = 'none';
+                    if (footerElem) footerElem.style.display = 'none';
+                } else {
+                    if (closedNotice) closedNotice.style.display = 'none';
+                    if (calContainer) calContainer.style.display = 'flex';
                 }
             }
 
@@ -2440,6 +2468,12 @@
 
         function submitOrder() {
             try {
+                // 注文締め切りチェック
+                if (window._cachedTeamSettings && window._cachedTeamSettings.isOrderClosed && !window._cachedTeamSettings.isSpecialUnlocked) {
+                    showModalAsync('今月分の注文受付は終了いたしました。\nどうしても必要な場合や追加のご希望は、LINEトーク画面より直接お問い合わせください。', 'alert');
+                    return;
+                }
+
                 var btn = document.querySelector('.submit-btn');
 
                 // ユーザー選択チェック
