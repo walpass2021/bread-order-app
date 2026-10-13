@@ -1048,10 +1048,16 @@
         }
 
         function onDataLoaded(data) {
+            if (!data || data.error) {
+                var errMsg = (data && data.error) ? data.error : 'データを受信できませんでした';
+                console.error('getInitialData error:', errMsg);
+                onFailure(new Error(errMsg));
+                return;
+            }
             console.log('Data loaded. isBound:', data.isBound, 'lineUserId:', lineUserId, 'urlMode:', urlMode, 'urlTeamCode:', urlTeamCode);
-            PRODUCTS = data.products;
-            USERS = data.users;
-            RULES = data.rules;
+            PRODUCTS = data.products || [];
+            USERS = data.users || [];
+            RULES = data.rules || [];
             window._isStripeTestMode = data.isStripeTestMode || false; // ★テストモードフラグをグローバルに保存
             window._cachedAvailableTeams = data.availableTeams || []; // ★チームごとのStripe導入設定を保存
 
@@ -1144,7 +1150,7 @@
             }
 
             // 1. 既に紐付け済みの場合はカレンダーを表示
-            if (data.isBound && USERS.length > 0) {
+            if (data.isBound && USERS && USERS.length > 0) {
                 var boundUser = USERS[0];
 
                 try {
@@ -1161,7 +1167,7 @@
             }
 
             // 1.5. LINE IDでは紐付けされなかったが、localStorageに保存済みの場合
-            if (!data.isBound && USERS.length > 0) {
+            if (!data.isBound && USERS && USERS.length > 0) {
                 try {
                     var savedUser = JSON.parse(localStorage.getItem('walpass_bound_user') || 'null');
                     if (savedUser && savedUser.userId) {
