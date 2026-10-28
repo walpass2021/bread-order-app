@@ -2389,7 +2389,8 @@
                     // 上書き・追加・キャンセル
                     var overwriteBtn = document.createElement('button');
                     overwriteBtn.className = 'custom-modal-btn';
-                    overwriteBtn.textContent = '上書き(更新)';
+                    overwriteBtn.textContent = '更新';
+                    overwriteBtn.style.whiteSpace = 'nowrap';
                     overwriteBtn.style.color = '#e63946'; // 警告色
                     overwriteBtn.onclick = function () {
                         overlay.style.display = 'none';
@@ -2567,30 +2568,6 @@
                     return;
                 }
 
-                // 最低注文個数制限チェック
-                var minOrderCount = 0;
-                if (window._cachedTeamSettings && window._cachedTeamSettings.minOrderCount) {
-                    minOrderCount = parseInt(window._cachedTeamSettings.minOrderCount) || 0;
-                }
-
-                if (minOrderCount > 0) {
-                    var totalQty = 0;
-                    orders.forEach(function (order) {
-                        totalQty += order.quantity;
-                    });
-
-                    if (totalQty < minOrderCount) {
-                        showModalAsync('ご注文ありがとうございます。現在の注文数は合計 ' + totalQty + ' 個です。\n\n大変恐れ入りますが、このチームは最低 ' + minOrderCount + ' 個からのご注文となります。\nあと ' + (minOrderCount - totalQty) + ' 個以上ご選択いただくようお願いいたします。🙇‍♀️', 'alert');
-                        return;
-                    }
-                }
-
-                // ボリューム割引・平均単価に基づく単価確認メッセージの生成
-                var applicablePrice = null;
-                var discountDetailsText = '';
-                var discountQty = (window._cachedTeamSettings && window._cachedTeamSettings.discountQty) ? parseInt(window._cachedTeamSettings.discountQty) : 0;
-                var discountPrice = (window._cachedTeamSettings && window._cachedTeamSettings.discountPrice) ? parseInt(window._cachedTeamSettings.discountPrice) : 0;
-
                 // 今回注文する個数の合計
                 var currentTotalQty = 0;
                 orders.forEach(function (order) {
@@ -2600,9 +2577,12 @@
                 // 今回注文する月を特定（最初の注文日より）
                 var orderMonth = null;
                 if (orders.length > 0 && orders[0].date) {
-                    var mMatch = orders[0].date.match(/(?:^|\D)(\d{1,2})\/\d{1,2}(?:\D|$)/);
-                    if (mMatch) {
-                        orderMonth = parseInt(mMatch[1]);
+                    var dObj = new Date(orders[0].date);
+                    if (!isNaN(dObj.getTime())) {
+                        orderMonth = dObj.getMonth() + 1;
+                    } else {
+                        var mMatch = String(orders[0].date).match(/(?:^|\D)(\d{1,2})\/\d{1,2}(?:\D|$)/);
+                        if (mMatch) orderMonth = parseInt(mMatch[1]);
                     }
                 }
 
@@ -2628,8 +2608,32 @@
 
                 var monthlyTotalQty = existingSameMonthQty + currentTotalQty;
 
+                // 最低注文個数制限チェック（当月合計個数が条件を満たしていれば追加注文可能）
+                var minOrderCount = 0;
+                if (window._cachedTeamSettings && window._cachedTeamSettings.minOrderCount) {
+                    minOrderCount = parseInt(window._cachedTeamSettings.minOrderCount) || 0;
+                }
+
+                if (minOrderCount > 0) {
+                    if (monthlyTotalQty < minOrderCount) {
+                        var countDetail = (existingSameMonthQty > 0) ? 
+                            '現在の注文数は合計 ' + monthlyTotalQty + ' 個（今回: ' + currentTotalQty + '個 ＋ 注文済: ' + existingSameMonthQty + '個）です。' :
+                            '現在の注文数は合計 ' + currentTotalQty + ' 個です。';
+                        var remainingMin = minOrderCount - monthlyTotalQty;
+                        showModalAsync('ご注文ありがとうございます。' + countDetail + '\n\n大変恐れ入りますが、このチームは最低 ' + minOrderCount + ' 個からのご注文となります。\nあと ' + remainingMin + ' 個以上ご選択いただくようお願いいたします。🙇‍♀️', 'alert');
+                        return;
+                    }
+                }
+
+                // ボリューム割引・平均単価に基づく単価確認メッセージの生成
+                var applicablePrice = null;
+                var discountDetailsText = '';
+                var discountQty = (window._cachedTeamSettings && window._cachedTeamSettings.discountQty) ? parseInt(window._cachedTeamSettings.discountQty) : 0;
+                var discountPrice = (window._cachedTeamSettings && window._cachedTeamSettings.discountPrice) ? parseInt(window._cachedTeamSettings.discountPrice) : 0;
+
                 // 1. ボリューム割引判定（当月合計注文個数が割引対象個数以上）
-                if (discountQty > 0 && discountPrice > 0 && monthlyTotalQty >= discountQty) {
+                var isVolumeDiscountAchieved = (discountQty > 0 && discountPrice > 0 && monthlyTotalQty >= discountQty);
+                if (isVolumeDiscountAchieved) {
                     applicablePrice = discountPrice;
                     discountDetailsText = '（割引適用: 合計' + monthlyTotalQty + '個 単価: ' + discountPrice + '円）';
                 }
@@ -2665,41 +2669,51 @@
                     }
                 }
 
-                // 日毎の個数チェック (1日に2個以上あれば警告)
+                // ボリューム割引の未達成案内テキスト（割引未達なら必ず作成）
+                var volumeRemainingText = '';
+                if (discountQty > 0 && discountPrice > 0 && !isVolumeDiscountAchieved) {
+                    var remaining = Math.max(1, discountQty - monthlyTotalQty);
+                    volumeRemainingText = '※当月あと ' + remaining + '個で割引（単価: ' + discountPrice + '円）が適用されます。';
+                }
+
+                // 確認メッセージの組み立て
                 var confirmMsg = '';
+                var orderCountText = orders.length + '件（合計 ' + currentTotalQty + '個）のご注文';
+
                 if (applicablePrice !== null) {
-                    confirmMsg = '適用単価は ' + applicablePrice + '円となります。' + discountDetailsText + '\nこの内容で注文を確定しますか？';
-                } else {
-                    if (discountQty > 0 && discountPrice > 0 && monthlyTotalQty < discountQty) {
-                        var remaining = discountQty - monthlyTotalQty;
-                        confirmMsg = orders.length + '件（合計 ' + currentTotalQty + '個）の注文を確定しますか？\n※当月あと ' + remaining + '個で割引（単価: ' + discountPrice + '円）が適用されます。';
-                    } else {
-                        confirmMsg = orders.length + '件（合計 ' + currentTotalQty + '個）の注文を確定しますか？';
+                    confirmMsg = orderCountText + '\n適用単価は ' + applicablePrice + '円となります。' + discountDetailsText;
+                    if (volumeRemainingText) {
+                        confirmMsg += '\n' + volumeRemainingText;
                     }
+                    confirmMsg += '\n\nこの内容で注文を確定しますか？';
+                } else {
+                    confirmMsg = orderCountText;
+                    if (volumeRemainingText) {
+                        confirmMsg += '\n' + volumeRemainingText;
+                    }
+                    confirmMsg += '\n\nこの内容で注文を確定しますか？';
                 }
 
                 if (multipleOrderDates.length > 0) {
-                    var priceText = '';
+                    var priceSection = '';
                     if (applicablePrice !== null) {
-                        priceText = '\n\n適用単価は ' + applicablePrice + '円となります。' + discountDetailsText + '\nこの内容で注文を確定しますか？';
-                    } else {
-                        if (discountQty > 0 && discountPrice > 0 && monthlyTotalQty < discountQty) {
-                            var remaining = discountQty - monthlyTotalQty;
-                            priceText = '\n※当月あと ' + remaining + '個で割引（単価: ' + discountPrice + '円）が適用されます。\n\nよろしいですか？';
-                        } else {
-                            priceText = '\n\nよろしいですか？';
+                        priceSection = '\n\n' + orderCountText + '\n適用単価は ' + applicablePrice + '円となります。' + discountDetailsText;
+                        if (volumeRemainingText) {
+                            priceSection += '\n' + volumeRemainingText;
                         }
+                        priceSection += '\n\nよろしいですか？';
+                    } else {
+                        priceSection = '\n\n' + orderCountText;
+                        if (volumeRemainingText) {
+                            priceSection += '\n' + volumeRemainingText;
+                        }
+                        priceSection += '\n\nよろしいですか？';
                     }
                     
-                    // 「平均2個以上」という条件と混ざって混乱するのを防ぐため、
-                    // 平均単価のチームでは、誤操作チェックの表現を「複数個（2個以上）」にマイルド化します
-                    var warningTitle = (applicablePrice !== null) ? 
-                        '【確認】以下の日付で複数個（2個以上）の注文があります。押し間違いがないかご確認ください：\n' :
-                        '【確認】以下の日付で2個以上の注文があります：\n';
-
+                    var warningTitle = '【確認】以下の日付で複数個（2個以上）の注文があります。押し間違いがないかご確認ください：\n';
                     confirmMsg = warningTitle +
                         multipleOrderDates.join('\n') +
-                        priceText;
+                        priceSection;
                 }
 
                 showModalAsync(confirmMsg, 'confirm').then(function (isConfirmed) {
@@ -2725,7 +2739,7 @@
                         var dupMsg = '【重複確認】<br>' +
                             '以下の日付は、すでに過去の注文が存在します：<br>' +
                             '<strong style="color:#e63946;">' + duplicateDates.join(', ') + '</strong><br><br>' +
-                            '・<strong>上書き(更新)</strong>：過去の同日注文を自動削除し、今回の注文に差し替えます。<br>' +
+                            '・<strong>更新</strong>：過去の同日注文を自動削除し、今回の注文に差し替えます。<br>' +
                             '・<strong>追加購入</strong>：過去の注文を残したまま、今回の注文を追加します。';
                         decisionPromise = showModalAsync(dupMsg, 'three_button');
                     } else {
