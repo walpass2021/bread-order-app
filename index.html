@@ -944,6 +944,7 @@
             var topBanner = document.getElementById('topBanner');
 
             if (settings) {
+                window._cachedTeamSettings = Object.assign(window._cachedTeamSettings || {}, settings);
                 // ロゴ画像の書き換え
                 if (settings.logoUrl) {
                     var logoDiv = document.querySelector('.header-logo');
@@ -2584,9 +2585,56 @@
                     }
                 }
 
-                // 平均数量に基づく単価確認メッセージの生成
+                // ボリューム割引・平均単価に基づく単価確認メッセージの生成
                 var applicablePrice = null;
-                var avgDetailsText = '';
+                var discountDetailsText = '';
+                var discountQty = (window._cachedTeamSettings && window._cachedTeamSettings.discountQty) ? parseInt(window._cachedTeamSettings.discountQty) : 0;
+                var discountPrice = (window._cachedTeamSettings && window._cachedTeamSettings.discountPrice) ? parseInt(window._cachedTeamSettings.discountPrice) : 0;
+
+                // 今回注文する個数の合計
+                var currentTotalQty = 0;
+                orders.forEach(function (order) {
+                    currentTotalQty += (parseInt(order.quantity) || 0);
+                });
+
+                // 今回注文する月を特定（最初の注文日より）
+                var orderMonth = null;
+                if (orders.length > 0 && orders[0].date) {
+                    var mMatch = orders[0].date.match(/(?:^|\D)(\d{1,2})\/\d{1,2}(?:\D|$)/);
+                    if (mMatch) {
+                        orderMonth = parseInt(mMatch[1]);
+                    }
+                }
+
+                // 同一月の既存注文個数を集計（今回上書きされる日付は除く）
+                var existingSameMonthQty = 0;
+                if (window._currentUserHistory && Array.isArray(window._currentUserHistory)) {
+                    var orderDatesMap = {};
+                    orders.forEach(function (o) {
+                        orderDatesMap[normalizeDateString(o.date)] = true;
+                    });
+
+                    window._currentUserHistory.forEach(function (h) {
+                        var hDateStr = normalizeDateString(h.OrderDate);
+                        if (!orderDatesMap[hDateStr]) {
+                            var hDate = new Date(h.OrderDate);
+                            var hMonth = !isNaN(hDate.getTime()) ? (hDate.getMonth() + 1) : null;
+                            if (hMonth === orderMonth) {
+                                existingSameMonthQty += (parseInt(h.Quantity) || 0);
+                            }
+                        }
+                    });
+                }
+
+                var monthlyTotalQty = existingSameMonthQty + currentTotalQty;
+
+                // 1. ボリューム割引判定（当月合計注文個数が割引対象個数以上）
+                if (discountQty > 0 && discountPrice > 0 && monthlyTotalQty >= discountQty) {
+                    applicablePrice = discountPrice;
+                    discountDetailsText = '（割引適用: 合計' + monthlyTotalQty + '個 単価: ' + discountPrice + '円）';
+                }
+
+                // 2. 平均単価判定
                 if (window._cachedTeamSettings && 
                     window._cachedTeamSettings.avgPriceLimitQty > 0 && 
                     window._cachedTeamSettings.avgPricePromoPrice > 0) {
@@ -2599,32 +2647,48 @@
                     var totalDeliveryDays = allowedDates.length;
                     if (totalDeliveryDays === 0) totalDeliveryDays = 1;
                     
-                    var totalQty = 0;
-                    orders.forEach(function (order) {
-                        totalQty += order.quantity;
-                    });
-                    
-                    var avgQty = totalQty / totalDeliveryDays;
-                    applicablePrice = (avgQty >= limitQty) ? promoPrice : normalPrice;
+                    var avgQty = currentTotalQty / totalDeliveryDays;
+                    var avgAchieved = (avgQty >= limitQty);
+                    var avgTargetPrice = avgAchieved ? promoPrice : normalPrice;
                     
                     var roundedAvg = Math.round(avgQty * 100) / 100;
-                    avgDetailsText = '（合計' + totalQty + '個 ÷ 配送' + totalDeliveryDays + '日 ＝ 1日平均' + roundedAvg + '個）';
+                    var avgText = '（合計' + currentTotalQty + '個 ÷ 配送' + totalDeliveryDays + '日 ＝ 1日平均' + roundedAvg + '個）';
+
+                    if (avgAchieved) {
+                        if (applicablePrice === null || avgTargetPrice < applicablePrice) {
+                            applicablePrice = avgTargetPrice;
+                            discountDetailsText = avgText;
+                        }
+                    } else if (applicablePrice === null && avgTargetPrice > 0) {
+                        applicablePrice = avgTargetPrice;
+                        discountDetailsText = avgText;
+                    }
                 }
 
                 // 日毎の個数チェック (1日に2個以上あれば警告)
                 var confirmMsg = '';
                 if (applicablePrice !== null) {
-                    confirmMsg = '適用単価は ' + applicablePrice + '円となります。' + avgDetailsText + '\nこの内容で注文を確定しますか？';
+                    confirmMsg = '適用単価は ' + applicablePrice + '円となります。' + discountDetailsText + '\nこの内容で注文を確定しますか？';
                 } else {
-                    confirmMsg = orders.length + '件の注文を確定しますか？';
+                    if (discountQty > 0 && discountPrice > 0 && monthlyTotalQty < discountQty) {
+                        var remaining = discountQty - monthlyTotalQty;
+                        confirmMsg = orders.length + '件（合計 ' + currentTotalQty + '個）の注文を確定しますか？\n※当月あと ' + remaining + '個で割引（単価: ' + discountPrice + '円）が適用されます。';
+                    } else {
+                        confirmMsg = orders.length + '件（合計 ' + currentTotalQty + '個）の注文を確定しますか？';
+                    }
                 }
 
                 if (multipleOrderDates.length > 0) {
                     var priceText = '';
                     if (applicablePrice !== null) {
-                        priceText = '\n\n適用単価は ' + applicablePrice + '円となります。' + avgDetailsText + '\nこの内容で注文を確定しますか？';
+                        priceText = '\n\n適用単価は ' + applicablePrice + '円となります。' + discountDetailsText + '\nこの内容で注文を確定しますか？';
                     } else {
-                        priceText = '\n\nよろしいですか？';
+                        if (discountQty > 0 && discountPrice > 0 && monthlyTotalQty < discountQty) {
+                            var remaining = discountQty - monthlyTotalQty;
+                            priceText = '\n※当月あと ' + remaining + '個で割引（単価: ' + discountPrice + '円）が適用されます。\n\nよろしいですか？';
+                        } else {
+                            priceText = '\n\nよろしいですか？';
+                        }
                     }
                     
                     // 「平均2個以上」という条件と混ざって混乱するのを防ぐため、
