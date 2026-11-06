@@ -233,6 +233,16 @@
             border-color: #93c5fd;
         }
 
+        .btn-history {
+            background-color: #f8fafc;
+            color: #1e293b;
+            border-color: #cbd5e1;
+        }
+
+        .btn-history:hover {
+            background-color: #f1f5f9;
+        }
+
         /* カレンダー（リスト形式） */
         .calendar-list {
             display: flex;
@@ -650,10 +660,13 @@
         <div id="bulkActionToolbar" class="bulk-action-toolbar" style="display: none;">
             <div class="bulk-toolbar-buttons">
                 <button type="button" id="btnRepeatLastMonth" class="bulk-tool-btn btn-repeat" onclick="applyPreviousMonthOrder()">
-                    <span>📋</span> 前月と同じにする
+                    <span>📋</span> 前月と同じ
                 </button>
                 <button type="button" id="btnToggleCycle" class="bulk-tool-btn btn-cycle" onclick="toggleCycleArea()">
-                    <span>🔄</span> サイクル作成 <span id="cycleToggleArrow" style="font-size:0.75rem; margin-left:2px;">▼</span>
+                    <span>🔄</span> サイクル <span id="cycleToggleArrow" style="font-size:0.75rem; margin-left:2px;">▼</span>
+                </button>
+                <button type="button" id="btnViewHistory" class="bulk-tool-btn btn-history" onclick="switchToHistoryView()">
+                    <span>📜</span> 注文履歴
                 </button>
             </div>
 
@@ -2893,6 +2906,34 @@
             }
         }
 
+        // 注文画面 ➔ 履歴画面への切り替え
+        function switchToHistoryView() {
+            var userSelect = document.getElementById('userSelect');
+            if (userSelect && userSelect.value) {
+                // 現在選択中のユーザーを保持
+                window._historySelectedUserId = userSelect.value;
+            }
+            renderHistoryView();
+        }
+
+        // 履歴画面 ➔ 注文画面への復帰
+        function switchToOrderView() {
+            urlMode = null;
+            localStorage.removeItem('walpass_mode');
+            renderCalendar();
+            renderCycleUI();
+            var footer = document.querySelector('footer');
+            if (footer) footer.style.display = 'block';
+            var toolbar = document.getElementById('bulkActionToolbar');
+            if (toolbar) toolbar.style.display = 'block';
+            var cycleArea = document.getElementById('cycleSelectArea');
+            if (cycleArea) cycleArea.style.display = 'none';
+            var arrow = document.getElementById('cycleToggleArrow');
+            if (arrow) arrow.textContent = '▼';
+            var btnCycle = document.getElementById('btnToggleCycle');
+            if (btnCycle) btnCycle.classList.remove('active');
+        }
+
         // --- 注文履歴画面の構築 ---
         function renderHistoryView() {
             var container = document.getElementById('calendarContainer');
@@ -2906,19 +2947,25 @@
 
             container.innerHTML = '<div style="text-align:center; padding: 20px;"><div class="spinner" style="margin: 0 auto 10px;"></div>Please wait...</div>';
 
-            // 引数の準備
-            var storedUserId = null;
-            try {
-                var s = JSON.parse(localStorage.getItem('walpass_bound_user') || 'null');
-                if (s) storedUserId = s.userId;
-            } catch (e) { console.error(e); }
+            // 引数の準備（選択中の選手があれば最優先、なければ保存済みユーザー、LINE ID）
+            var activeUserId = window._historySelectedUserId || null;
+            if (!activeUserId) {
+                var userSelect = document.getElementById('userSelect');
+                if (userSelect && userSelect.value) activeUserId = userSelect.value;
+            }
+            if (!activeUserId) {
+                try {
+                    var s = JSON.parse(localStorage.getItem('walpass_bound_user') || 'null');
+                    if (s) activeUserId = s.userId;
+                } catch (e) { console.error(e); }
+            }
 
             var debugLineId = (typeof lineUserId !== 'undefined' ? lineUserId : null);
-            console.log('renderHistoryView called. lineUserId:', debugLineId, 'storedUserId:', storedUserId);
+            console.log('renderHistoryView called. lineUserId:', debugLineId, 'activeUserId:', activeUserId);
 
             var historyParams = 'api=getOrderHistory';
             if (debugLineId) historyParams += '&lineId=' + encodeURIComponent(debugLineId);
-            if (storedUserId) historyParams += '&userId=' + encodeURIComponent(storedUserId);
+            if (activeUserId) historyParams += '&userId=' + encodeURIComponent(activeUserId);
 
             gasJsonpFetch(historyParams)
                 .then(function (res) {
@@ -2978,7 +3025,7 @@
                         });
 
                         // 戻るボタン
-                        html += '<button onclick="urlMode=null; localStorage.removeItem(\'walpass_mode\'); renderCalendar(); renderCycleUI(); document.querySelector(\'footer\').style.display=\'block\'; document.getElementById(\'cycleSelectArea\').style.display=\'\'; this.parentNode.querySelector(\'h2\').remove(); this.nextElementSibling.remove(); this.remove();" style="width:100%; padding:15px; background:#888; color:white; border:none; border-radius:8px; font-weight:bold; margin-top:10px; margin-bottom:10px;">注文画面に戻る</button>';
+                        html += '<button onclick="switchToOrderView()" style="width:100%; padding:15px; background:#475569; color:white; border:none; border-radius:8px; font-weight:bold; margin-top:10px; margin-bottom:10px; cursor:pointer;">注文画面に戻る</button>';
 
                         // ログアウト（リセット）ボタン - テストや切り替え用
                         html += '<button onclick="if(confirm(\'ログアウトしてユーザー登録を解除しますか？\')){localStorage.clear(); localStorage.setItem(\'walpass_logged_out\',\'1\'); var base=window.location.href.split(\'?\')[0]; window.location.href=base+\'?mode=register\' + (urlTeamCode ? \'&team=\'+urlTeamCode : \'\')}" style="width:100%; padding:15px; background:#e74c3c; color:white; border:none; border-radius:8px; font-weight:bold; margin-bottom:40px;">ログアウト（別の名前で登録し直す）</button>';
