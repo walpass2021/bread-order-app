@@ -175,7 +175,7 @@
             opacity: 0.8;
         }
 
-        /* 一括入力アシストツールバー（案2: 横並びスマートボタン） */
+        /* 一括入力アシストツールバー（2段レイアウト） */
         .bulk-action-toolbar {
             margin-bottom: 20px;
         }
@@ -183,7 +183,7 @@
         .bulk-toolbar-buttons {
             display: flex;
             gap: 10px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .bulk-tool-btn {
@@ -198,9 +198,10 @@
             align-items: center;
             justify-content: center;
             gap: 6px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
             border: 1px solid transparent;
             text-align: center;
+            white-space: nowrap;
         }
 
         .bulk-tool-btn:active {
@@ -233,14 +234,55 @@
             border-color: #93c5fd;
         }
 
-        .btn-history {
+        /* 下段: 洗練された注文履歴リンクバー */
+        .history-link-bar {
+            width: 100%;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 11px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            transition: all 0.2s ease;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+        }
+
+        .history-link-bar:hover {
             background-color: #f8fafc;
-            color: #1e293b;
             border-color: #cbd5e1;
         }
 
-        .btn-history:hover {
+        .history-link-bar:active {
+            transform: scale(0.99);
             background-color: #f1f5f9;
+        }
+
+        .history-link-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-link-icon {
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        .history-link-text {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .history-link-arrow {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            font-weight: bold;
+            line-height: 1;
         }
 
         /* カレンダー（リスト形式） */
@@ -656,19 +698,26 @@
             </select>
         </div>
 
-        <!-- 一括入力アシストツールバー（案2: 横並びボタン＋折りたたみ） -->
+        <!-- 一括入力アシストツールバー（案A: 2段レイアウト） -->
         <div id="bulkActionToolbar" class="bulk-action-toolbar" style="display: none;">
+            <!-- 上段: 入力補助2ボタン -->
             <div class="bulk-toolbar-buttons">
                 <button type="button" id="btnRepeatLastMonth" class="bulk-tool-btn btn-repeat" onclick="applyPreviousMonthOrder()">
-                    <span>📋</span> 前月と同じ
+                    <span>📋</span> 前月と同じにする
                 </button>
                 <button type="button" id="btnToggleCycle" class="bulk-tool-btn btn-cycle" onclick="toggleCycleArea()">
-                    <span>🔄</span> サイクル <span id="cycleToggleArrow" style="font-size:0.75rem; margin-left:2px;">▼</span>
-                </button>
-                <button type="button" id="btnViewHistory" class="bulk-tool-btn btn-history" onclick="switchToHistoryView()">
-                    <span>📜</span> 注文履歴
+                    <span>🔄</span> サイクル作成 <span id="cycleToggleArrow" style="font-size:0.75rem; margin-left:2px;">▼</span>
                 </button>
             </div>
+
+            <!-- 下段: 注文履歴・請求確認リンクバー -->
+            <button type="button" id="btnViewHistory" class="history-link-bar" onclick="switchToHistoryView()">
+                <div class="history-link-left">
+                    <span class="history-link-icon">📜</span>
+                    <span class="history-link-text">過去の注文履歴・請求金額を確認する</span>
+                </div>
+                <span class="history-link-arrow">›</span>
+            </button>
 
             <!-- サイクル自動設定エリア（ボタンを押した時のみ展開） -->
             <div id="cycleSelectArea" class="cycle-select-area" style="display: none;">
